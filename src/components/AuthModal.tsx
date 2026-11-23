@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { X, Lock, Mail, User, ShieldCheck, Sparkles, ArrowRight, Phone, Loader2 } from 'lucide-react';
 import { useHouse } from '../context/HouseContext';
 import { Roommate } from '../lib/types';
@@ -12,6 +13,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
+  const router = useRouter();
   const { roommates, currentRoommate, setCurrentRoommateId, showToast, handleInviteRoommate, activeWorkspace } = useHouse();
 
   const [tab, setTab] = useState<'LOGIN' | 'SIGNUP' | 'QUICK_SWITCH'>('QUICK_SWITCH');
@@ -42,6 +44,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             (r) => r.phone === email || r.name.toLowerCase() === (data.user.user_metadata?.full_name || '').toLowerCase()
           );
           if (found) setCurrentRoommateId(found.id);
+          router.push('/');
           onClose();
           return;
         }
@@ -61,6 +64,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       showToast(`Logged in successfully as ${currentRoommate.name}!`);
     }
     setLoading(false);
+    router.push('/');
     onClose();
   };
 
@@ -114,6 +118,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setCurrentRoommateId(newRoomie.id);
     showToast(`Account created for ${name}! Welcome to ${activeWorkspace.name}.`);
     setLoading(false);
+    router.push('/');
     onClose();
   };
 
@@ -184,6 +189,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     onClick={() => {
                       setCurrentRoommateId(r.id);
                       showToast(`Switched profile to ${r.name}`);
+                      router.push('/');
                       onClose();
                     }}
                     className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
