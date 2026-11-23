@@ -5,6 +5,9 @@ import { AppNavigation } from './AppNavigation';
 import { FooterSection } from './FooterSection';
 import { MpesaPasteModal } from './MpesaPasteModal';
 import { WorkspaceModal } from './WorkspaceModal';
+import { AIChatDrawer } from './AIChatDrawer';
+import { AuthModal } from './AuthModal';
+import { ProfileModal } from './ProfileModal';
 import { useHouse } from '../context/HouseContext';
 import { Sparkles } from 'lucide-react';
 
@@ -17,6 +20,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     isWorkspaceModalOpen,
     setIsWorkspaceModalOpen,
     workspaceModalMode,
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    isProfileModalOpen,
+    setIsProfileModalOpen,
     activeWorkspace,
     handleCreateWorkspace,
     handleInviteRoommate,
@@ -40,6 +47,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex-1">
         {children}
       </div>
+
+      {/* Interactive AI Arbitrator Drawer */}
+      <AIChatDrawer />
+
+      {/* Auth & Profile Modals */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
 
       {/* Communal Footer */}
       <FooterSection />

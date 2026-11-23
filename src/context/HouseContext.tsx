@@ -62,6 +62,10 @@ interface HouseContextType {
   setIsWorkspaceModalOpen: (open: boolean) => void;
   workspaceModalMode: 'CREATE_WORKSPACE' | 'INVITE_MEMBER';
   setWorkspaceModalMode: (mode: 'CREATE_WORKSPACE' | 'INVITE_MEMBER') => void;
+  isAuthModalOpen: boolean;
+  setIsAuthModalOpen: (open: boolean) => void;
+  isProfileModalOpen: boolean;
+  setIsProfileModalOpen: (open: boolean) => void;
 
   toastMessage: string | null;
   showToast: (msg: string) => void;
@@ -84,6 +88,8 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
   const [isMpesaModalOpen, setIsMpesaModalOpen] = useState(false);
   const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
   const [workspaceModalMode, setWorkspaceModalMode] = useState<'CREATE_WORKSPACE' | 'INVITE_MEMBER'>('CREATE_WORKSPACE');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
@@ -216,6 +222,10 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
         setIsWorkspaceModalOpen,
         workspaceModalMode,
         setWorkspaceModalMode,
+        isAuthModalOpen,
+        setIsAuthModalOpen,
+        isProfileModalOpen,
+        setIsProfileModalOpen,
         toastMessage,
         showToast,
       }}

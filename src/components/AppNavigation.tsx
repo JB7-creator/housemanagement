@@ -16,6 +16,9 @@ import {
   Gavel,
   ShoppingCart,
   Users,
+  MessageSquare,
+  LogIn,
+  Settings,
 } from 'lucide-react';
 import { useHouse } from '../context/HouseContext';
 
@@ -26,6 +29,7 @@ const NAV_LINKS = [
   { href: '/chores', label: 'Chores & Bounties', icon: CheckSquare },
   { href: '/parliament', label: 'Parliament & AI', icon: Gavel },
   { href: '/shopping', label: 'Market Shopping', icon: ShoppingCart },
+  { href: '/chat', label: 'Discussion Feed', icon: MessageSquare },
   { href: '/members', label: 'Flatmates', icon: Users },
 ];
 
@@ -41,6 +45,8 @@ export function AppNavigation() {
     setIsMpesaModalOpen,
     setIsWorkspaceModalOpen,
     setWorkspaceModalMode,
+    setIsAuthModalOpen,
+    setIsProfileModalOpen,
     showToast,
   } = useHouse();
 
@@ -130,6 +136,16 @@ export function AppNavigation() {
             </select>
           </div>
 
+          {/* Auth & Switch Profile Button */}
+          <button
+            onClick={() => setIsAuthModalOpen(true)}
+            title="Log in or Switch Profile"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold transition-all bg-white shadow-xs"
+          >
+            <LogIn className="w-3.5 h-3.5 text-slate-500" />
+            <span>Login</span>
+          </button>
+
           {/* Paste M-Pesa Primary Button */}
           <button
             onClick={() => setIsMpesaModalOpen(true)}
@@ -138,6 +154,22 @@ export function AppNavigation() {
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span className="hidden sm:inline">Paste M-Pesa</span>
             <span className="sm:hidden">M-Pesa</span>
+          </button>
+
+          {/* Current Avatar Click to Edit Profile */}
+          <button
+            onClick={() => setIsProfileModalOpen(true)}
+            title="Click to Customize Your Profile"
+            className="relative group cursor-pointer focus:outline-none"
+          >
+            <img
+              src={currentRoommate.avatar}
+              alt={currentRoommate.name}
+              className="w-9 h-9 rounded-full object-cover ring-2 ring-electric-500/20 group-hover:ring-electric-500 transition-all"
+            />
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-slate-900 border border-white flex items-center justify-center text-white">
+              <Settings className="w-2.5 h-2.5" />
+            </div>
           </button>
         </div>
       </div>

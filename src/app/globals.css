@@ -4,7 +4,12 @@
 
 @layer base {
   body {
-    @apply bg-white text-slate-800 antialiased selection:bg-blue-100 selection:text-blue-900;
+    @apply bg-[#FAFCFF] text-slate-800 antialiased selection:bg-blue-100 selection:text-blue-900;
+    background-image: 
+      radial-gradient(rgba(0, 82, 255, 0.045) 1px, transparent 1px),
+      radial-gradient(rgba(212, 175, 55, 0.035) 1px, transparent 1px);
+    background-size: 32px 32px, 64px 64px;
+    background-position: 0 0, 16px 16px;
   }
 }
 

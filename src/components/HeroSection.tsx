@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Sparkles, ArrowRight, Activity, ShieldAlert, Cpu, CheckCircle2, Zap, Users, Radio } from 'lucide-react';
+import Link from 'next/link';
+import { Sparkles, ArrowRight, Activity, ShieldAlert, Cpu, CheckCircle2, Zap, Users, Radio, MessageSquare } from 'lucide-react';
 import { formatKES } from '../lib/utils';
+import { ConstellationCanvas } from './ConstellationCanvas';
 
 interface HeroSectionProps {
   onOpenMpesa: () => void;
@@ -40,9 +42,23 @@ export function HeroSection({ onOpenMpesa, onExploreParliament }: HeroSectionPro
   const currentEvent = LIVE_EVENTS[activeEventIndex];
 
   return (
-    <section className="relative pt-8 pb-16 md:pt-14 md:pb-22 bg-gradient-to-b from-white via-slate-50/60 to-white overflow-hidden border-b border-slate-200">
-      {/* Ambient background decoration */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-tr from-electric-50 via-champagne-50/40 to-transparent blur-3xl -z-10 pointer-events-none" />
+    <section className="relative pt-10 pb-20 md:pt-16 md:pb-24 overflow-hidden border-b border-slate-200">
+      {/* High-Resolution Architectural Co-Living Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center opacity-[0.15] pointer-events-none scale-105"
+        style={{
+          backgroundImage: "url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80')",
+        }}
+      />
+      {/* Architectural Gradient Glass Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#FAFCFF]/80 via-[#FAFCFF]/92 to-[#FAFCFF] pointer-events-none -z-10" />
+
+      {/* Live Constellation Canvas */}
+      <ConstellationCanvas />
+
+      {/* Glowing Ambient Luminous Accents */}
+      <div className="absolute top-10 left-1/4 w-96 h-96 bg-electric-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
+      <div className="absolute top-20 right-1/4 w-80 h-80 bg-champagne-500/15 rounded-full blur-3xl -z-10 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
@@ -86,13 +102,40 @@ export function HeroSection({ onOpenMpesa, onExploreParliament }: HeroSectionPro
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </button>
 
-              <button
-                onClick={onExploreParliament}
+              <Link
+                href="/chat"
                 className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-semibold text-sm shadow-xs transition-all duration-200"
               >
-                <Cpu className="w-4 h-4 text-champagne-600" />
-                <span>House Parliament & Rules</span>
-              </button>
+                <MessageSquare className="w-4 h-4 text-electric-500" />
+                <span>Flatmate Discussion</span>
+              </Link>
+            </div>
+
+            {/* Emotional Human Social Proof */}
+            <div className="flex items-center gap-3 pt-1">
+              <div className="flex -space-x-2">
+                <img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
+                  alt="Student"
+                  className="w-8 h-8 rounded-full border-2 border-white object-cover"
+                />
+                <img
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80"
+                  alt="Student"
+                  className="w-8 h-8 rounded-full border-2 border-white object-cover"
+                />
+                <img
+                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80"
+                  alt="Student"
+                  className="w-8 h-8 rounded-full border-2 border-white object-cover"
+                />
+                <div className="w-8 h-8 rounded-full border-2 border-white bg-champagne-100 flex items-center justify-center text-[10px] font-bold text-champagne-800">
+                  +4.2k
+                </div>
+              </div>
+              <p className="text-xs text-slate-600 font-medium">
+                Harmonizing <strong className="text-slate-900">4,200+ students & flatmates</strong> across Kenya
+              </p>
             </div>
 
             {/* Dynamic Kinetic Live Pulse Feed */}
