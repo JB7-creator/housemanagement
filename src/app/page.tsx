@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from '../components/Navbar';
 import { HeroSection } from '../components/HeroSection';
 import { DebtHeatmap } from '../components/DebtHeatmap';
+import { RoommateProfiles } from '../components/RoommateProfiles';
+import { ExpenseHistory } from '../components/ExpenseHistory';
 import { ChoreBoard } from '../components/ChoreBoard';
 import { ParliamentSection } from '../components/ParliamentSection';
 import { EmergencyFundCard } from '../components/EmergencyFundCard';
@@ -194,7 +196,12 @@ export default function HomePage() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
-        {/* Module 1: Visual Debt Heatmap & Directed Settlements */}
+        {/* Module 1: Roommate Profiles Directory */}
+        <section id="profiles-section">
+          <RoommateProfiles roommates={roommates} />
+        </section>
+
+        {/* Module 2: Visual Debt Heatmap & Directed Settlements */}
         <section id="debt-section">
           <DebtHeatmap
             roommates={roommates}
@@ -205,7 +212,12 @@ export default function HomePage() {
           />
         </section>
 
-        {/* Module 2: Envy-Free Weekly Chore Board */}
+        {/* Module 3: Expense Ledger & Line-Item Sub-Splits */}
+        <section id="ledger-section">
+          <ExpenseHistory expenses={expenses} roommates={roommates} />
+        </section>
+
+        {/* Module 4: Envy-Free Weekly Chore Board */}
         <section id="chores-section">
           <ChoreBoard
             chores={chores}
@@ -215,7 +227,7 @@ export default function HomePage() {
           />
         </section>
 
-        {/* Module 3: House Parliament & Democratic Bills */}
+        {/* Module 5: House Parliament & Democratic Bills */}
         <section id="parliament-section">
           <ParliamentSection
             bills={bills}
@@ -226,12 +238,12 @@ export default function HomePage() {
           />
         </section>
 
-        {/* Module 4: Market Shopping List & Dietary Sub-Splitter */}
+        {/* Module 6: Market Shopping List & Dietary Sub-Splitter */}
         <section id="shopping-section">
           <ShoppingListBuilder roommates={roommates} />
         </section>
 
-        {/* Module 5: House Emergency Sinking Fund & Buffer Pool */}
+        {/* Module 7: House Emergency Sinking Fund & Buffer Pool */}
         <section id="emergency-section">
           <EmergencyFundCard fund={fund} roommates={roommates} />
         </section>

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, ArrowRight, Activity, ShieldAlert, Cpu, CheckCircle2, ChevronRight, Zap } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sparkles, ArrowRight, Activity, ShieldAlert, Cpu, CheckCircle2, Zap, Users, Radio } from 'lucide-react';
 import { formatKES } from '../lib/utils';
 
 interface HeroSectionProps {
@@ -9,34 +9,59 @@ interface HeroSectionProps {
   onExploreParliament: () => void;
 }
 
+const LIVE_EVENTS = [
+  { text: 'Kevin logged Ksh 1,150 Mama Mboga run · Auto-split to 4 roommates', time: '1m ago', tag: 'M-PESA' },
+  { text: 'Dennis activated University Exam Mode · Chore load lowered by 80%', time: '4m ago', tag: 'CHORE HARMONY' },
+  { text: 'Bill #42 (Wi-Fi 50 Mbps Upgrade) passed by 100% flat consensus', time: '12m ago', tag: 'PARLIAMENT' },
+  { text: 'Brian claimed Ksh 50 Bounty for late kitchen counter sanitization', time: '18m ago', tag: 'BOUNTY' },
+  { text: 'Maya settled Ksh 450 to Kevin via 1-Tap M-Pesa · Zero circular debt', time: '25m ago', tag: 'SETTLED' },
+];
+
 export function HeroSection({ onOpenMpesa, onExploreParliament }: HeroSectionProps) {
-  // Live Simulator state right in the hero
-  const [rentKES, setRentKES] = useState(32000);
-  const [utilitiesKES, setUtilitiesKES] = useState(6500);
-  const [groceriesKES, setGroceriesKES] = useState(12000);
-  const [roommatesCount, setRoommatesCount] = useState(4);
+  // Realistic university student low-budget presets (Starting from 3k / low-budget sharing)
+  const [rentKES, setRentKES] = useState(7000); // 7,000 KES flat / bedsitter shared by roommates
+  const [utilitiesKES, setUtilitiesKES] = useState(850); // Tokens + water + gas
+  const [groceriesKES, setGroceriesKES] = useState(1400); // Market vegetables + staples
+  const [roommatesCount, setRoommatesCount] = useState(2); // 2 roommates in bedsitter/1-bed
+
+  const [activeEventIndex, setActiveEventIndex] = useState(0);
+
+  // Live real-time ticker
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveEventIndex((prev) => (prev + 1) % LIVE_EVENTS.length);
+    }, 3800);
+    return () => clearInterval(timer);
+  }, []);
 
   const totalHouseExpense = rentKES + utilitiesKES + groceriesKES;
   const equitablePerPerson = Math.round(totalHouseExpense / roommatesCount);
-  const unfairDisputeRisk = Math.max(5, Math.round((totalHouseExpense / 50000) * 15));
+
+  const currentEvent = LIVE_EVENTS[activeEventIndex];
 
   return (
-    <section className="relative pt-10 pb-16 md:pt-16 md:pb-24 bg-gradient-to-b from-white via-slate-50/50 to-white overflow-hidden border-b border-slate-200">
+    <section className="relative pt-8 pb-16 md:pt-14 md:pb-22 bg-gradient-to-b from-white via-slate-50/60 to-white overflow-hidden border-b border-slate-200">
       {/* Ambient background decoration */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-tr from-electric-50 via-champagne-50/40 to-transparent blur-3xl -z-10 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
           
-          {/* Left Column: Vision & Typographic Rhythm */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Top Micro-Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-electric-500 animate-pulse" />
-              <span>Algorithmic Justice for University & Shared Housing</span>
+          {/* Left Column: Kinetic Typographic Rhythm */}
+          <div className="lg:col-span-7 space-y-5">
+            {/* Live Status Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50/80 border border-blue-200 text-blue-700 text-xs font-semibold">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-electric-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-electric-500"></span>
+              </span>
+              <span>Low-Budget & University Flat Fairness Engine</span>
+              <span className="text-[10px] bg-electric-100 text-electric-800 px-1.5 py-0.2 rounded font-mono font-bold">
+                From 3K Rent
+              </span>
             </div>
 
-            {/* Headline */}
+            {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-extrabold text-slate-900 tracking-tight leading-[1.12]">
               Co-living without the drama.{' '}
               <span className="text-electric-500">Fairness engineered</span> for{' '}
@@ -47,17 +72,17 @@ export function HeroSection({ onOpenMpesa, onExploreParliament }: HeroSectionPro
 
             {/* Subtitle */}
             <p className="text-base sm:text-lg text-slate-600 max-w-2xl font-normal leading-relaxed">
-              No more awkward money confrontations, neglected chores, or endless WhatsApp arguments.
-              Our <strong className="text-slate-900 font-semibold">Brutal AI Arbitrator</strong> parses Safaricom M-Pesa receipts, balances dietary sub-splits (greens vs. meat), and automates envy-free chore rotations.
+              Designed for student flats and low-budget roommates.
+              Our <strong className="text-slate-900 font-semibold">Brutal AI Arbitrator</strong> parses Safaricom M-Pesa receipts, balances greens vs. meat diets, and eliminates awkward money fights.
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-4 pt-2">
+            <div className="flex flex-wrap items-center gap-3.5 pt-1">
               <button
                 onClick={onOpenMpesa}
                 className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-electric-500 hover:bg-electric-600 text-white font-bold text-sm shadow-card hover:shadow-electric-glow transition-all duration-200 active:scale-[0.98]"
               >
-                <span>Post M-Pesa Receipt</span>
+                <span>Paste M-Pesa SMS</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </button>
 
@@ -66,62 +91,75 @@ export function HeroSection({ onOpenMpesa, onExploreParliament }: HeroSectionPro
                 className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-semibold text-sm shadow-xs transition-all duration-200"
               >
                 <Cpu className="w-4 h-4 text-champagne-600" />
-                <span>House Parliament & AI Rules</span>
+                <span>House Parliament & Rules</span>
               </button>
             </div>
 
-            {/* Live Real-Time Activity Pill */}
-            <div className="pt-4 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
-                <CheckCircle2 className="w-4 h-4" />
+            {/* Dynamic Kinetic Live Pulse Feed */}
+            <div className="pt-2">
+              <div className="p-3 rounded-xl bg-slate-50/90 border border-slate-200/80 flex items-center gap-3 transition-all duration-300">
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
+                  <Radio className="w-3.5 h-3.5 animate-pulse" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-electric-600 font-mono">
+                      {currentEvent.tag}
+                    </span>
+                    <span className="text-[10px] text-slate-400">· {currentEvent.time}</span>
+                  </div>
+                  <p className="text-xs text-slate-800 font-medium truncate">{currentEvent.text}</p>
+                </div>
               </div>
-              <p className="text-xs text-slate-500">
-                <span className="font-semibold text-slate-800">Live Pulse:</span> Kevin logged Ksh 1,150 Mama Mboga run · Dennis exempted from beef & dairy · Net settled in 1 tap.
-              </p>
             </div>
           </div>
 
-          {/* Right Column: Live Interactive Simulator Widget */}
+          {/* Right Column: Live Interactive Flat Budget Simulator */}
           <div className="lg:col-span-5">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-card p-6 relative">
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div>
-                  <h3 className="font-display font-bold text-base text-slate-900">Live Flat Simulator</h3>
-                  <p className="text-xs text-slate-500">Test how HouseManagement balances your house</p>
+                  <h3 className="font-display font-bold text-base text-slate-900">Live Low-Budget Flat Simulator</h3>
+                  <p className="text-xs text-slate-500">Student & campus apartment cost estimator</p>
                 </div>
-                <span className="px-2.5 py-1 rounded-md bg-electric-50 text-electric-600 font-mono text-xs font-bold">
-                  {roommatesCount} Roommates
-                </span>
+                <div className="flex items-center gap-1 bg-electric-50 px-2.5 py-1 rounded-md text-electric-700 text-xs font-bold font-mono">
+                  <Users className="w-3 h-3" />
+                  <span>{roommatesCount} Roommates</span>
+                </div>
               </div>
 
-              {/* Sliders */}
+              {/* Sliders tailored for Student / Low-Budget Living */}
               <div className="space-y-4 py-5">
                 <div>
                   <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                    <span>Monthly Flat Rent</span>
-                    <span className="font-mono text-slate-900">{formatKES(rentKES)}</span>
+                    <span>Flat Rent (Shared)</span>
+                    <span className="font-mono text-slate-900 font-bold">{formatKES(rentKES)}</span>
                   </div>
                   <input
                     type="range"
-                    min={15000}
-                    max={60000}
-                    step={1000}
+                    min={2500}
+                    max={18000}
+                    step={250}
                     value={rentKES}
                     onChange={(e) => setRentKES(Number(e.target.value))}
                     className="w-full accent-electric-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg"
                   />
+                  <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                    <span>2.5K Bedsitter</span>
+                    <span>18K 2-Bedroom</span>
+                  </div>
                 </div>
 
                 <div>
                   <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                    <span>Utilities (KPLC Tokens, Gas, Wi-Fi)</span>
-                    <span className="font-mono text-slate-900">{formatKES(utilitiesKES)}</span>
+                    <span>Utilities (Tokens, Gas, Borehole Water)</span>
+                    <span className="font-mono text-slate-900 font-bold">{formatKES(utilitiesKES)}</span>
                   </div>
                   <input
                     type="range"
-                    min={2000}
-                    max={15000}
-                    step={500}
+                    min={200}
+                    max={3000}
+                    step={50}
                     value={utilitiesKES}
                     onChange={(e) => setUtilitiesKES(Number(e.target.value))}
                     className="w-full accent-electric-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg"
@@ -130,16 +168,32 @@ export function HeroSection({ onOpenMpesa, onExploreParliament }: HeroSectionPro
 
                 <div>
                   <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                    <span>Shared Food & Market Runs</span>
-                    <span className="font-mono text-slate-900">{formatKES(groceriesKES)}</span>
+                    <span>Mama Mboga & Market Staples</span>
+                    <span className="font-mono text-slate-900 font-bold">{formatKES(groceriesKES)}</span>
                   </div>
                   <input
                     type="range"
-                    min={4000}
-                    max={25000}
-                    step={500}
+                    min={300}
+                    max={4000}
+                    step={50}
                     value={groceriesKES}
                     onChange={(e) => setGroceriesKES(Number(e.target.value))}
+                    className="w-full accent-electric-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                    <span>Sharing Roommates</span>
+                    <span className="font-mono text-slate-900 font-bold">{roommatesCount} People</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={2}
+                    max={6}
+                    step={1}
+                    value={roommatesCount}
+                    onChange={(e) => setRoommatesCount(Number(e.target.value))}
                     className="w-full accent-electric-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg"
                   />
                 </div>
@@ -148,25 +202,25 @@ export function HeroSection({ onOpenMpesa, onExploreParliament }: HeroSectionPro
               {/* Simulation Result Card */}
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-xs font-medium text-slate-500">Total House Commitment:</span>
+                  <span className="text-xs font-medium text-slate-500">Total Flat Expense:</span>
                   <span className="font-mono font-bold text-slate-900">{formatKES(totalHouseExpense)}</span>
                 </div>
-                <div className="flex justify-between items-baseline pt-1 border-t border-slate-200">
+                <div className="flex justify-between items-baseline pt-1.5 border-t border-slate-200">
                   <div>
-                    <span className="text-xs font-bold text-electric-600 block">Equitable Split per Person:</span>
-                    <span className="text-[11px] text-slate-400">Dietary & exam adjustments applied</span>
+                    <span className="text-xs font-bold text-electric-600 block">Your Exact Share:</span>
+                    <span className="text-[11px] text-slate-400">Dietary & exam factors active</span>
                   </div>
                   <span className="font-mono text-xl font-extrabold text-electric-600">{formatKES(equitablePerPerson)}</span>
                 </div>
               </div>
 
               {/* Bottom Guarantee */}
-              <div className="mt-4 flex items-center justify-between text-[11px] text-slate-500 pt-2">
+              <div className="mt-4 flex items-center justify-between text-[11px] text-slate-500 pt-1">
                 <span className="inline-flex items-center gap-1">
                   <Zap className="w-3.5 h-3.5 text-champagne-500" />
-                  Direct M-Pesa settlement ready
+                  M-Pesa 1-Tap Ready
                 </span>
-                <span className="font-semibold text-emerald-600">Zero Unfair Debt Residue</span>
+                <span className="font-semibold text-emerald-600">Zero Debt Fights</span>
               </div>
             </div>
           </div>
