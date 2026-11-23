@@ -31,6 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     activeWorkspace,
     handleCreateWorkspace,
     handleInviteRoommate,
+    handleJoinWorkspaceByCode,
     toastMessage,
   } = useHouse();
 
@@ -93,6 +94,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onClose={() => setIsWorkspaceModalOpen(false)}
         onCreateWorkspace={handleCreateWorkspace}
         onInviteRoommate={handleInviteRoommate}
+        onJoinWorkspace={handleJoinWorkspaceByCode}
       />
     </div>
   );

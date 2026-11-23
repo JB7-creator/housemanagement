@@ -9,6 +9,7 @@ import {
   Plus,
   Building2,
   UserPlus,
+  Hash,
   LayoutDashboard,
   Wallet,
   Receipt,
@@ -164,6 +165,17 @@ export function AppNavigation() {
                   >
                     <UserPlus className="w-3.5 h-3.5 text-slate-500" />
                     <span>Invite Roommate (Code: {activeWorkspace.inviteCode})</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsWorkspaceDropdownOpen(false);
+                      setWorkspaceModalMode('JOIN_WORKSPACE');
+                      setIsWorkspaceModalOpen(true);
+                    }}
+                    className="w-full px-2.5 py-1.5 text-xs text-champagne-700 hover:bg-champagne-50 rounded-lg flex items-center gap-2 font-medium transition-colors"
+                  >
+                    <Hash className="w-3.5 h-3.5 text-champagne-500" />
+                    <span>Join Flat by Invite Code</span>
                   </button>
                 </div>
               </div>

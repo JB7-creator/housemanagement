@@ -6,11 +6,12 @@ import { Workspace, Roommate, DietaryPreference } from '../lib/types';
 
 interface WorkspaceModalProps {
   isOpen: boolean;
-  mode: 'CREATE_WORKSPACE' | 'INVITE_MEMBER';
+  mode: 'CREATE_WORKSPACE' | 'INVITE_MEMBER' | 'JOIN_WORKSPACE';
   activeWorkspace: Workspace;
   onClose: () => void;
   onCreateWorkspace: (ws: Workspace) => void;
   onInviteRoommate: (member: Roommate) => void;
+  onJoinWorkspace?: (code: string) => boolean;
 }
 
 export function WorkspaceModal({
@@ -20,6 +21,7 @@ export function WorkspaceModal({
   onClose,
   onCreateWorkspace,
   onInviteRoommate,
+  onJoinWorkspace,
 }: WorkspaceModalProps) {
   // Create Workspace Form State
   const [workspaceName, setWorkspaceName] = useState('');
@@ -37,6 +39,10 @@ export function WorkspaceModal({
   const [isExamPeriod, setIsExamPeriod] = useState(false);
 
   const [copiedCode, setCopiedCode] = useState(false);
+
+  // Join Workspace Form State
+  const [joinCode, setJoinCode] = useState('');
+  const [joinError, setJoinError] = useState('');
 
   if (!isOpen) return null;
 
@@ -98,6 +104,19 @@ export function WorkspaceModal({
     setTimeout(() => setCopiedCode(false), 2500);
   };
 
+  const handleJoinSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!joinCode.trim()) return;
+    setJoinError('');
+    const success = onJoinWorkspace?.(joinCode);
+    if (success) {
+      setJoinCode('');
+      onClose();
+    } else {
+      setJoinError('Invalid invite code. Ask your flat coordinator for the correct code.');
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
@@ -106,15 +125,17 @@ export function WorkspaceModal({
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-electric-50 border border-electric-200 flex items-center justify-center text-electric-600">
-              {mode === 'CREATE_WORKSPACE' ? <Building2 className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+              {mode === 'CREATE_WORKSPACE' ? <Building2 className="w-4 h-4" /> : mode === 'JOIN_WORKSPACE' ? <Hash className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
             </div>
             <div>
               <h3 className="font-display font-bold text-base text-slate-900">
-                {mode === 'CREATE_WORKSPACE' ? 'Create New Flat Workspace' : `Invite Roommate to ${activeWorkspace.name}`}
+                {mode === 'CREATE_WORKSPACE' ? 'Create New Flat Workspace' : mode === 'JOIN_WORKSPACE' ? 'Join a Flat by Invite Code' : `Invite Roommate to ${activeWorkspace.name}`}
               </h3>
               <p className="text-[11px] text-slate-400">
                 {mode === 'CREATE_WORKSPACE'
                   ? 'Set up your shared apartment or university hostel'
+                  : mode === 'JOIN_WORKSPACE'
+                  ? 'Enter the code shared by your flat coordinator'
                   : 'Add flatmates with dietary & exam schedules'}
               </p>
             </div>
@@ -125,7 +146,46 @@ export function WorkspaceModal({
         </div>
 
         {/* Content based on mode */}
-        {mode === 'CREATE_WORKSPACE' ? (
+        {mode === 'JOIN_WORKSPACE' ? (
+          <form onSubmit={handleJoinSubmit} className="space-y-4">
+            <div className="p-3 rounded-xl bg-electric-50/60 border border-electric-200 text-xs text-electric-800 font-medium">
+              Ask your flat coordinator to share the flat invite code (e.g. <span className="font-mono font-bold">FLAT-4291</span>). Enter it below to join their workspace.
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-700 block mb-1">
+                Flat Invite Code
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. ROYS-402 or FLAT-4291"
+                value={joinCode}
+                onChange={(e) => { setJoinCode(e.target.value); setJoinError(''); }}
+                className="w-full text-sm p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-electric-500 font-mono tracking-widest uppercase"
+              />
+              {joinError && (
+                <p className="mt-1.5 text-xs text-red-600 font-medium">{joinError}</p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 bg-electric-500 hover:bg-electric-600 text-white text-xs font-bold rounded-lg shadow-sm"
+              >
+                Join Flat →
+              </button>
+            </div>
+          </form>
+        ) : mode === 'CREATE_WORKSPACE' ? (
           <form onSubmit={handleCreateWorkspaceSubmit} className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">
