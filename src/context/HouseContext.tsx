@@ -28,9 +28,45 @@ const DEFAULT_WORKSPACE: Workspace = {
   createdAt: '2026-11-01',
 };
 
-// Tag initial seed data with the default workspace ID
-const SEED_ROOMMATES = INITIAL_ROOMMATES.map((r) => ({
+export const DEFAULT_CREDENTIALS: Record<string, { email: string; password: string; roommateId: string }> = {
+  'demo@roomjustice.ke': {
+    email: 'demo@roomjustice.ke',
+    password: 'DemoPassword2025!',
+    roommateId: 'roomie_1',
+  },
+  'brian@roomjustice.ke': {
+    email: 'brian@roomjustice.ke',
+    password: 'Roomie2025!',
+    roommateId: 'roomie_1',
+  },
+  'kevin@roomjustice.ke': {
+    email: 'kevin@roomjustice.ke',
+    password: 'Roomie2025!',
+    roommateId: 'roomie_2',
+  },
+  'dennis@roomjustice.ke': {
+    email: 'dennis@roomjustice.ke',
+    password: 'Roomie2025!',
+    roommateId: 'roomie_3',
+  },
+  'maya@roomjustice.ke': {
+    email: 'maya@roomjustice.ke',
+    password: 'Roomie2025!',
+    roommateId: 'roomie_4',
+  },
+};
+
+// Tag initial seed data with the default workspace ID and demo emails
+const SEED_EMAILS = [
+  'brian@roomjustice.ke',
+  'kevin@roomjustice.ke',
+  'dennis@roomjustice.ke',
+  'maya@roomjustice.ke',
+];
+
+const SEED_ROOMMATES = INITIAL_ROOMMATES.map((r, i) => ({
   ...r,
+  email: r.email || SEED_EMAILS[i] || `flatmate${i + 1}@roomjustice.ke`,
   workspaceId: r.workspaceId || DEFAULT_WORKSPACE.id,
 }));
 
@@ -82,6 +118,9 @@ interface HouseContextType {
   // Authentication & Onboarding Gate
   isAuthenticated: boolean;
   isHydrated: boolean;
+  supabaseUser: any;
+  pendingOAuthUser: { id: string; email: string; name: string; avatar: string; phone?: string } | null;
+  setPendingOAuthUser: (user: { id: string; email: string; name: string; avatar: string; phone?: string } | null) => void;
   allRoommates: Roommate[];
   loginUser: (roommateId: string) => void;
   logoutUser: () => void;
@@ -89,8 +128,12 @@ interface HouseContextType {
     user: Partial<Roommate>,
     workspaceChoice:
       | { mode: 'CREATE'; ws: { name: string; location?: string; monthlyRentKES?: number; rentDueDay?: number } }
-      | { mode: 'JOIN'; inviteCode: string }
+      | { mode: 'JOIN'; inviteCode: string },
+    authPassword?: string
   ) => boolean;
+  verifyAndLogin: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithOAuth: (provider: 'google' | 'github') => Promise<void>;
+  sendMagicLink: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
 
   // Modals & Notifications
   isMpesaModalOpen: boolean;
@@ -137,6 +180,14 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
   // Authentication & Onboarding Gate
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
+  const [supabaseUser, setSupabaseUser] = useState<any>(null);
+  const [pendingOAuthUser, setPendingOAuthUser] = useState<{
+    id: string;
+    email: string;
+    name: string;
+    avatar: string;
+    phone?: string;
+  } | null>(null);
 
   // Restore authenticated session & persisted database entities from localStorage on client load
   useEffect(() => {
@@ -327,12 +378,131 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
 
   const logoutUser = () => {
     setIsAuthenticated(false);
+    setSupabaseUser(null);
+    setPendingOAuthUser(null);
+    if (isSupabaseConfigured && supabase) {
+      supabase.auth.signOut().catch(() => {});
+    }
     try {
       localStorage.removeItem('roomjustice_is_authenticated');
       localStorage.removeItem('roomjustice_current_roommate_id');
       localStorage.removeItem('roomjustice_active_ws_id');
     } catch (e) {}
-    showToast('Logged out of your profile. Please sign in to re-enter.');
+    showToast('Logged out securely. Please authenticate to enter.');
+  };
+
+  // Securely verify credentials against Supabase Auth and local credential storage
+  const verifyAndLogin = async (email: string, password?: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      return { success: false, error: 'Please enter your email address.' };
+    }
+
+    // 1. Attempt Supabase Auth signInWithPassword
+    if (isSupabaseConfigured && supabase && password) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password: password,
+        });
+
+        if (!error && data?.user) {
+          setSupabaseUser(data.user);
+          const found = allRoommates.find(
+            (r) =>
+              r.id === data.user.id ||
+              r.email?.toLowerCase() === cleanEmail ||
+              r.handle.toLowerCase() === `@${cleanEmail.split('@')[0]}`
+          );
+
+          if (found) {
+            loginUser(found.id);
+            return { success: true };
+          } else {
+            setPendingOAuthUser({
+              id: data.user.id,
+              email: cleanEmail,
+              name: data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
+              avatar: data.user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.id}`,
+              phone: data.user.user_metadata?.phone_number || '',
+            });
+            return { success: true };
+          }
+        }
+      } catch (err: any) {
+        console.warn('Supabase signInWithPassword:', err);
+      }
+    }
+
+    // 2. Validate against local credentials store (seeded demo accounts + locally registered accounts)
+    try {
+      const credsRaw = localStorage.getItem('roomjustice_user_credentials');
+      const creds: Record<string, { email: string; password: string; roommateId: string }> = credsRaw
+        ? JSON.parse(credsRaw)
+        : DEFAULT_CREDENTIALS;
+
+      const userCred = creds[cleanEmail];
+      if (userCred) {
+        if (!password || userCred.password !== password) {
+          return {
+            success: false,
+            error: 'Incorrect password. Please verify your password or use Magic Link.',
+          };
+        }
+
+        // Password verified!
+        loginUser(userCred.roommateId);
+        return { success: true };
+      }
+    } catch (e) {
+      console.warn('Local credential verification error:', e);
+    }
+
+    // If neither Supabase nor local credentials verified the password, REJECT!
+    return {
+      success: false,
+      error: 'Account not found or password incorrect. Please verify your credentials or register a new account.',
+    };
+  };
+
+  // Google / GitHub OAuth Provider Login
+  const loginWithOAuth = async (provider: 'google' | 'github') => {
+    if (!isSupabaseConfigured || !supabase) {
+      showToast(`Supabase is not configured for ${provider} authentication.`);
+      return;
+    }
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: origin,
+      },
+    });
+    if (error) {
+      showToast(`OAuth error: ${error.message}`);
+    }
+  };
+
+  // Magic Link Passwordless Sign-In
+  const sendMagicLink = async (email: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      return { success: false, error: 'Please enter a valid email address.' };
+    }
+    if (!isSupabaseConfigured || !supabase) {
+      return { success: false, error: 'Supabase is not configured for Magic Link.' };
+    }
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const { error } = await supabase.auth.signInWithOtp({
+      email: cleanEmail,
+      options: {
+        emailRedirectTo: origin,
+      },
+    });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, message: `Magic Link sent to ${cleanEmail}! Check your inbox to sign in.` };
   };
 
   // Active workspace object
@@ -370,74 +540,87 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
     }
   }, [activeWorkspaceId, roommates, currentRoommateId]);
 
-  // Sync Supabase Auth session & remote profiles on mount
+  // Sync Supabase Auth session, OAuth redirects & remote profiles
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
       const client = supabase;
-      const syncSession = async () => {
-        try {
-          const { data: { session } } = await client.auth.getSession();
-          if (session?.user) {
-            const email = session.user.email || '';
-            const defaultName = session.user.user_metadata?.full_name || email.split('@')[0];
 
-            // Query remote profiles table in Supabase
-            const { data: profile } = await client
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
+      // 1. Initial session check
+      client.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setSupabaseUser(session.user);
+          const email = session.user.email || '';
+          const name = session.user.user_metadata?.full_name || email.split('@')[0] || 'Flatmate';
 
-            const finalName = profile?.full_name || defaultName;
-            const finalPhone = profile?.phone_number || session.user.user_metadata?.phone_number || '';
-            const finalBio = profile?.bio || 'Flatmate at ' + activeWorkspace.name;
-            const finalAvatar =
-              profile?.avatar_url ||
-              `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(finalName)}`;
+          const match = allRoommates.find(
+            (r) =>
+              r.id === session.user.id ||
+              (email && r.email?.toLowerCase() === email.toLowerCase())
+          );
 
-            setAllRoommates((prev) => {
-              const idx = prev.findIndex((r) => r.id === session.user.id);
-              if (idx >= 0) {
-                return prev.map((r, i) =>
-                  i === idx
-                    ? {
-                        ...r,
-                        name: finalName,
-                        phone: finalPhone || r.phone,
-                        bio: finalBio || r.bio,
-                        avatar: finalAvatar || r.avatar,
-                      }
-                    : r
-                );
-              } else {
-                return [
-                  ...prev,
-                  {
-                    id: session.user.id,
-                    workspaceId: activeWorkspaceId,
-                    name: finalName,
-                    handle: `@${finalName.toLowerCase().replace(/\s+/g, '_')}`,
-                    phone: finalPhone,
-                    avatar: finalAvatar,
-                    role: 'member',
-                    bio: finalBio,
-                    diet: ['all', 'greens_lover'],
-                    examPeriod: false,
-                    availabilityScore: 1.0,
-                    karmaScore: 100,
-                    streakWeeks: 0,
-                  },
-                ];
-              }
+          if (match) {
+            setCurrentRoommateId(match.id);
+            if (match.workspaceId) setActiveWorkspaceId(match.workspaceId);
+            setIsAuthenticated(true);
+          } else {
+            setPendingOAuthUser({
+              id: session.user.id,
+              email: email,
+              name: name,
+              avatar: session.user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user.id}`,
+              phone: session.user.user_metadata?.phone_number || '',
             });
           }
-        } catch (e) {
-          console.warn('Supabase profile fetch notice:', e);
         }
+      });
+
+      // 2. Real-time auth listener for Google/GitHub OAuth redirects & sign in / sign out
+      const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+          if (session?.user) {
+            setSupabaseUser(session.user);
+            const email = session.user.email || '';
+            const name = session.user.user_metadata?.full_name || email.split('@')[0] || 'Flatmate';
+
+            const match = allRoommates.find(
+              (r) =>
+                r.id === session.user.id ||
+                (email && r.email?.toLowerCase() === email.toLowerCase())
+            );
+
+            if (match) {
+              setCurrentRoommateId(match.id);
+              if (match.workspaceId) setActiveWorkspaceId(match.workspaceId);
+              setIsAuthenticated(true);
+              localStorage.setItem('roomjustice_is_authenticated', 'true');
+              localStorage.setItem('roomjustice_current_roommate_id', match.id);
+            } else {
+              setPendingOAuthUser({
+                id: session.user.id,
+                email: email,
+                name: name,
+                avatar: session.user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user.id}`,
+                phone: session.user.user_metadata?.phone_number || '',
+              });
+            }
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setSupabaseUser(null);
+          setPendingOAuthUser(null);
+          setIsAuthenticated(false);
+          try {
+            localStorage.removeItem('roomjustice_is_authenticated');
+            localStorage.removeItem('roomjustice_current_roommate_id');
+            localStorage.removeItem('roomjustice_active_ws_id');
+          } catch (e) {}
+        }
+      });
+
+      return () => {
+        subscription.unsubscribe();
       };
-      syncSession();
     }
-  }, [activeWorkspaceId]);
+  }, [allRoommates]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -733,14 +916,31 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Onboard new user: register profile + choose workspace (Create or Join)
+  // Onboard new user: register profile + choose workspace (Create or Join) + save credentials
   const registerAndOnboard = (
     user: Partial<Roommate>,
     workspaceChoice:
       | { mode: 'CREATE'; ws: { name: string; location?: string; monthlyRentKES?: number; rentDueDay?: number } }
-      | { mode: 'JOIN'; inviteCode: string }
+      | { mode: 'JOIN'; inviteCode: string },
+    authPassword?: string
   ): boolean => {
     const timestamp = Date.now();
+    const userId = user.id || pendingOAuthUser?.id || supabaseUser?.id || `user_${timestamp}`;
+    const userEmail = user.email || pendingOAuthUser?.email || supabaseUser?.email || '';
+
+    // If email and password provided, save into local credentials store
+    if (userEmail && authPassword) {
+      try {
+        const credsRaw = localStorage.getItem('roomjustice_user_credentials');
+        const creds = credsRaw ? JSON.parse(credsRaw) : { ...DEFAULT_CREDENTIALS };
+        creds[userEmail.toLowerCase()] = {
+          email: userEmail.toLowerCase(),
+          password: authPassword,
+          roommateId: userId,
+        };
+        localStorage.setItem('roomjustice_user_credentials', JSON.stringify(creds));
+      } catch (e) {}
+    }
 
     if (workspaceChoice.mode === 'CREATE') {
       const code = `FLAT-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -755,9 +955,10 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
       };
 
       const newCoordinator: Roommate = {
-        id: `user_${timestamp}`,
+        id: userId,
         workspaceId: newWs.id,
         name: user.name || 'Flat Coordinator',
+        email: userEmail,
         handle: `@${(user.name || 'coordinator').toLowerCase().replace(/\s+/g, '_')}`,
         phone: user.phone || '0712345678',
         avatar: user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name || 'lead')}`,
@@ -966,6 +1167,7 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
       setActiveWorkspaceId(newWs.id);
       setCurrentRoommateId(newCoordinator.id);
       setIsAuthenticated(true);
+      setPendingOAuthUser(null);
 
       try {
         localStorage.setItem('roomjustice_is_authenticated', 'true');
@@ -985,9 +1187,10 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
       }
 
       const newMember: Roommate = {
-        id: `user_${timestamp}`,
+        id: userId,
         workspaceId: foundWs.id,
         name: user.name || 'Flatmate',
+        email: userEmail,
         handle: `@${(user.name || 'flatmate').toLowerCase().replace(/\s+/g, '_')}`,
         phone: user.phone || '0712345678',
         avatar: user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name || 'member')}`,
@@ -1004,6 +1207,7 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
       setActiveWorkspaceId(foundWs.id);
       setCurrentRoommateId(newMember.id);
       setIsAuthenticated(true);
+      setPendingOAuthUser(null);
 
       try {
         localStorage.setItem('roomjustice_is_authenticated', 'true');
@@ -1146,10 +1350,16 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
         fund,
         isAuthenticated,
         isHydrated,
+        supabaseUser,
+        pendingOAuthUser,
+        setPendingOAuthUser,
         allRoommates,
         loginUser,
         logoutUser,
         registerAndOnboard,
+        verifyAndLogin,
+        loginWithOAuth,
+        sendMagicLink,
         isMpesaModalOpen,
         setIsMpesaModalOpen,
         isWorkspaceModalOpen,

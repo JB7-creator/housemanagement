@@ -14,6 +14,7 @@ export interface Roommate {
   id: string;
   workspaceId?: string;
   name: string;
+  email?: string; // Verified email address
   handle: string; // e.g. @brian_ke
   phone: string;  // e.g. 0712345678
   avatar: string;

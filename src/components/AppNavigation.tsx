@@ -267,34 +267,19 @@ export function AppNavigation() {
                   </div>
                 </div>
 
-                {/* Quick Profile Switching row */}
-                <div className="p-2 border-b border-slate-100">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block px-1.5 mb-1">
-                    Quick Switch Roommate:
-                  </span>
-                  <div className="grid grid-cols-4 gap-1">
-                    {roommates.map((r) => (
-                      <button
-                        key={r.id}
-                        title={`Switch to ${r.name}`}
-                        onClick={() => {
-                          setCurrentRoommateId(r.id);
-                          setIsUserMenuOpen(false);
-                          showToast(`Logged in as ${r.name}`);
-                        }}
-                        className={`p-1 rounded-lg flex flex-col items-center gap-0.5 transition-all ${
-                          r.id === currentRoommate.id
-                            ? 'bg-electric-50 ring-1 ring-electric-500'
-                            : 'hover:bg-slate-50 opacity-70 hover:opacity-100'
-                        }`}
-                      >
-                        <img src={r.avatar} alt={r.name} className="w-6 h-6 rounded-full object-cover" />
-                        <span className="text-[9px] font-medium text-slate-700 truncate max-w-[45px]">
-                          {r.name.split(' ')[0]}
-                        </span>
-                      </button>
-                    ))}
+                {/* Authenticated Account Badge */}
+                <div className="p-2.5 border-b border-slate-100 bg-slate-50/50">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Security Status:
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Authenticated
+                    </span>
                   </div>
+                  <span className="text-[11px] text-slate-500 block truncate mt-1">
+                    {currentRoommate.email || currentRoommate.phone}
+                  </span>
                 </div>
 
                 {/* Menu items */}
