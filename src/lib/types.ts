@@ -1,7 +1,18 @@
 export type DietaryPreference = 'all' | 'vegetarian' | 'halal' | 'lactose_intolerant' | 'greens_lover';
 
+export interface Workspace {
+  id: string;
+  name: string;
+  inviteCode: string;
+  location: string;
+  monthlyRentKES: number;
+  rentDueDay: number;
+  createdAt: string;
+}
+
 export interface Roommate {
   id: string;
+  workspaceId?: string;
   name: string;
   handle: string; // e.g. @brian_ke
   phone: string;  // e.g. 0712345678
@@ -25,6 +36,7 @@ export interface LineItem {
 
 export interface Expense {
   id: string;
+  workspaceId?: string;
   payerId: string;
   title: string;
   category: 'GROCERIES' | 'RENT' | 'ELECTRICITY' | 'WATER' | 'GAS' | 'TRANSPORT' | 'HOUSE_BUFFER';
@@ -45,6 +57,7 @@ export interface SettlementTransaction {
 
 export interface Chore {
   id: string;
+  workspaceId?: string;
   title: string;
   description: string;
   difficulty: 1 | 2 | 3 | 4 | 5;
@@ -60,6 +73,7 @@ export interface Chore {
 
 export interface ParliamentBill {
   id: string;
+  workspaceId?: string;
   billNumber: number;
   proposerId: string;
   title: string;
@@ -93,6 +107,7 @@ export interface EmergencyFundState {
 
 export interface FineRecord {
   id: string;
+  workspaceId?: string;
   offenderId: string;
   reporterId: string;
   infraction: string;

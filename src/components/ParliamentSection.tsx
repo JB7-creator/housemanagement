@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Gavel, Check, X, ShieldAlert, Cpu, Sparkles, MessageCircle, AlertCircle } from 'lucide-react';
+import { Gavel, Check, X, ShieldAlert, Cpu, Sparkles, Loader2 } from 'lucide-react';
 import { ParliamentBill, Roommate } from '../lib/types';
 import { formatKES } from '../lib/utils';
 
@@ -10,7 +10,7 @@ interface ParliamentSectionProps {
   roommates: Roommate[];
   currentRoommate: Roommate;
   onVote: (billId: string, vote: 'PASS' | 'VETO', reason?: string) => void;
-  onRequestArbitration: (billId: string) => void;
+  onRequestArbitration: (billId: string, verdict: { summary: string; recommendedResolution: string; decisionTimestamp: string }) => void;
 }
 
 export function ParliamentSection({
@@ -22,13 +22,51 @@ export function ParliamentSection({
 }: ParliamentSectionProps) {
   const [vetoReasonInput, setVetoReasonInput] = useState<Record<string, string>>({});
   const [activeReasonModalBillId, setActiveReasonModalBillId] = useState<string | null>(null);
+  const [loadingArbitrationId, setLoadingArbitrationId] = useState<string | null>(null);
 
-  const getRoommate = (id: string) => roommates.find((r) => r.id === id) || { name: 'Unknown', avatar: '', handle: '' };
+  const getRoommate = (id: string) =>
+    roommates.find((r) => r.id === id) || { name: 'Unknown', avatar: '', handle: '', phone: '' };
 
   const handleVetoSubmit = (billId: string) => {
     const reason = vetoReasonInput[billId] || 'Budget constraint / preference';
     onVote(billId, 'VETO', reason);
     setActiveReasonModalBillId(null);
+  };
+
+  const handleTriggerLiveAIArbitration = async (bill: ParliamentBill) => {
+    setLoadingArbitrationId(bill.id);
+    try {
+      const proposer = getRoommate(bill.proposerId);
+      const res = await fetch('/api/ai/arbitrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          billTitle: bill.title,
+          billDescription: bill.description,
+          category: bill.category,
+          proposerName: proposer.name,
+          votes: bill.votes.map((v) => ({
+            roommateName: getRoommate(v.roommateId).name,
+            vote: v.vote,
+            reason: v.reason,
+          })),
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const verdict = {
+          summary: `${data.provider || 'AI Arbitrator'}: ${data.summary || data.ruling}`,
+          recommendedResolution: data.recommendedResolution || data.ruling,
+          decisionTimestamp: 'Just now',
+        };
+        onRequestArbitration(bill.id, verdict);
+      }
+    } catch (err) {
+      console.error('Failed to arbitrate bill:', err);
+    } finally {
+      setLoadingArbitrationId(null);
+    }
   };
 
   return (
@@ -43,7 +81,7 @@ export function ParliamentSection({
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Democratic legislation for shared Wi-Fi, rules, and amenities. Contested bills trigger strict AI arbitration.
+            Democratic legislation for shared Wi-Fi, rules, and amenities. Contested bills trigger strict AI arbitration via Groq & NVIDIA NIM.
           </p>
         </div>
 
@@ -60,6 +98,7 @@ export function ParliamentSection({
           const hasVoted = bill.votes.some((v) => v.roommateId === currentRoommate.id);
           const passVotes = bill.votes.filter((v) => v.vote === 'PASS').length;
           const vetoVotes = bill.votes.filter((v) => v.vote === 'VETO').length;
+          const isArbitrating = loadingArbitrationId === bill.id;
 
           return (
             <div
@@ -113,17 +152,44 @@ export function ParliamentSection({
                   </div>
                 </div>
 
-                {/* AI Arbitrator Box if Arbitration required or rendered */}
-                {bill.aiArbitratorVerdict && (
+                {/* AI Arbitrator Box */}
+                {bill.aiArbitratorVerdict ? (
                   <div className="p-3.5 rounded-xl bg-champagne-50/70 border border-champagne-200 space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-champagne-900">
-                      <Cpu className="w-3.5 h-3.5 text-champagne-600" />
-                      <span>Brutal AI Arbitrator Ruling</span>
+                    <div className="flex items-center justify-between text-xs font-bold text-champagne-900">
+                      <span className="flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5 text-champagne-600" />
+                        <span>Brutal AI Arbitrator Ruling</span>
+                      </span>
+                      <span className="text-[10px] text-champagne-700 font-mono">
+                        {bill.aiArbitratorVerdict.decisionTimestamp}
+                      </span>
                     </div>
                     <p className="text-xs text-slate-700 leading-snug font-medium">
                       {bill.aiArbitratorVerdict.recommendedResolution}
                     </p>
                   </div>
+                ) : (
+                  vetoVotes > 0 && (
+                    <div className="flex justify-end pt-1">
+                      <button
+                        onClick={() => handleTriggerLiveAIArbitration(bill)}
+                        disabled={isArbitrating}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-champagne-100 hover:bg-champagne-200 text-champagne-900 text-xs font-bold border border-champagne-300 transition-all"
+                      >
+                        {isArbitrating ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Arbitrating with AI...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Cpu className="w-3.5 h-3.5 text-champagne-700" />
+                            <span>Summon AI Arbitrator</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )
                 )}
               </div>
 

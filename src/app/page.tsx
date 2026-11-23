@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '../components/Navbar';
 import { HeroSection } from '../components/HeroSection';
 import { DebtHeatmap } from '../components/DebtHeatmap';
@@ -9,6 +9,7 @@ import { ParliamentSection } from '../components/ParliamentSection';
 import { EmergencyFundCard } from '../components/EmergencyFundCard';
 import { ShoppingListBuilder } from '../components/ShoppingListBuilder';
 import { MpesaPasteModal } from '../components/MpesaPasteModal';
+import { WorkspaceModal } from '../components/WorkspaceModal';
 import { FooterSection } from '../components/FooterSection';
 import {
   INITIAL_ROOMMATES,
@@ -17,25 +18,52 @@ import {
   INITIAL_BILLS,
   INITIAL_EMERGENCY_FUND,
 } from '../lib/mockData';
-import { Expense, Chore, ParliamentBill } from '../lib/types';
-import { ShieldCheck, Sparkles, MessageSquare, AlertCircle } from 'lucide-react';
+import { Expense, Chore, ParliamentBill, Workspace, Roommate } from '../lib/types';
+import { Sparkles } from 'lucide-react';
+
+const DEFAULT_WORKSPACE: Workspace = {
+  id: 'ws_roysambu_4b',
+  name: 'Flat 4B Roysambu Crew',
+  inviteCode: 'ROYS-402',
+  location: 'Roysambu, Lumumba Drive',
+  monthlyRentKES: 32000,
+  rentDueDay: 5,
+  createdAt: '2026-11-01',
+};
 
 export default function HomePage() {
-  const [roommates, setRoommates] = useState(INITIAL_ROOMMATES);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([DEFAULT_WORKSPACE]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(DEFAULT_WORKSPACE.id);
+
+  const [roommates, setRoommates] = useState<Roommate[]>(INITIAL_ROOMMATES);
   const [expenses, setExpenses] = useState<Expense[]>(INITIAL_EXPENSES);
   const [chores, setChores] = useState<Chore[]>(INITIAL_CHORES);
   const [bills, setBills] = useState<ParliamentBill[]>(INITIAL_BILLS);
   const [fund, setFund] = useState(INITIAL_EMERGENCY_FUND);
 
-  const [currentRoommateId, setCurrentRoommateId] = useState(roommates[0].id);
+  const [currentRoommateId, setCurrentRoommateId] = useState(roommates[0]?.id || 'roomie_1');
   const [isMpesaModalOpen, setIsMpesaModalOpen] = useState(false);
+  const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
+  const [workspaceModalMode, setWorkspaceModalMode] = useState<'CREATE_WORKSPACE' | 'INVITE_MEMBER'>('CREATE_WORKSPACE');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
   const currentRoommate = roommates.find((r) => r.id === currentRoommateId) || roommates[0];
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleCreateWorkspace = (newWs: Workspace) => {
+    setWorkspaces((prev) => [...prev, newWs]);
+    setActiveWorkspaceId(newWs.id);
+    showToast(`Created workspace: ${newWs.name}! Share code ${newWs.inviteCode} with flatmates.`);
+  };
+
+  const handleInviteRoommate = (newMember: Roommate) => {
+    setRoommates((prev) => [...prev, newMember]);
+    showToast(`Added ${newMember.name} (${newMember.handle}) to ${activeWorkspace.name}!`);
   };
 
   const handleAddExpense = (newExpense: Expense) => {
@@ -51,13 +79,13 @@ export default function HomePage() {
             ...c,
             status: 'COMPLETED',
             rating: 5,
-            assignedToId: currentRoommate.id, // Claimed by viewer
+            assignedToId: currentRoommate.id,
           };
         }
         return c;
       })
     );
-    showToast(`${currentRoommate.name} claimed KES 50 bounty and completed the chore!`);
+    showToast(`${currentRoommate.name} claimed KES 50 bounty and verified chore completion!`);
   };
 
   const handleRateChore = (choreId: string, rating: number) => {
@@ -101,8 +129,23 @@ export default function HomePage() {
     showToast(`Vote recorded: ${vote}`);
   };
 
-  const handleRequestArbitration = (billId: string) => {
-    showToast('AI Arbitrator summoned to evaluate conflicting house interests.');
+  const handleArbitrationVerdict = (
+    billId: string,
+    verdict: { summary: string; recommendedResolution: string; decisionTimestamp: string }
+  ) => {
+    setBills(
+      bills.map((b) => {
+        if (b.id === billId) {
+          return {
+            ...b,
+            status: 'PASSED',
+            aiArbitratorVerdict: verdict,
+          };
+        }
+        return b;
+      })
+    );
+    showToast('Brutal AI Arbitrator has rendered a final, binding decision on the bill!');
   };
 
   const handleScrollToSection = (id: string) => {
@@ -120,12 +163,27 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Navigation */}
+      {/* Navigation with Multi-Workspace support */}
       <Navbar
         currentRoommate={currentRoommate}
         roommates={roommates}
+        workspaces={workspaces}
+        activeWorkspace={activeWorkspace}
         onOpenMpesaModal={() => setIsMpesaModalOpen(true)}
         onSelectRoommate={(id) => setCurrentRoommateId(id)}
+        onSelectWorkspace={(id) => {
+          setActiveWorkspaceId(id);
+          const ws = workspaces.find((w) => w.id === id);
+          if (ws) showToast(`Switched to workspace: ${ws.name}`);
+        }}
+        onOpenCreateWorkspace={() => {
+          setWorkspaceModalMode('CREATE_WORKSPACE');
+          setIsWorkspaceModalOpen(true);
+        }}
+        onOpenInviteMember={() => {
+          setWorkspaceModalMode('INVITE_MEMBER');
+          setIsWorkspaceModalOpen(true);
+        }}
       />
 
       {/* Hero Section with Live Simulator */}
@@ -164,7 +222,7 @@ export default function HomePage() {
             roommates={roommates}
             currentRoommate={currentRoommate}
             onVote={handleVoteBill}
-            onRequestArbitration={handleRequestArbitration}
+            onRequestArbitration={handleArbitrationVerdict}
           />
         </section>
 
@@ -182,12 +240,21 @@ export default function HomePage() {
       {/* Footer */}
       <FooterSection />
 
-      {/* M-Pesa Paste Modal */}
+      {/* Modals */}
       <MpesaPasteModal
         isOpen={isMpesaModalOpen}
         onClose={() => setIsMpesaModalOpen(false)}
         roommates={roommates}
         onAddExpense={handleAddExpense}
+      />
+
+      <WorkspaceModal
+        isOpen={isWorkspaceModalOpen}
+        mode={workspaceModalMode}
+        activeWorkspace={activeWorkspace}
+        onClose={() => setIsWorkspaceModalOpen(false)}
+        onCreateWorkspace={handleCreateWorkspace}
+        onInviteRoommate={handleInviteRoommate}
       />
     </div>
   );
