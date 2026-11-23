@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, User, Phone, Leaf, Milk, GraduationCap, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import { useHouse } from '../context/HouseContext';
 import { Roommate, DietaryPreference } from '../lib/types';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -42,6 +43,22 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     currentRoommate.diet = newDiet;
     currentRoommate.examPeriod = examActive;
     currentRoommate.availabilityScore = examActive ? 0.2 : 1.0;
+
+    // Synchronize to Supabase if logged in
+    if (isSupabaseConfigured && supabase) {
+      const client = supabase;
+      client.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          client.from('profiles').upsert({
+            id: user.id,
+            full_name: name,
+            phone_number: phone,
+            bio: bio,
+            avatar_url: avatar,
+          }).then(() => {});
+        }
+      }).catch(() => {});
+    }
 
     showToast('Profile updated! Your dietary splits and exam relief are synchronized.');
     onClose();

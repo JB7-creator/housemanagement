@@ -16,6 +16,7 @@ import {
   INITIAL_BILLS,
   INITIAL_EMERGENCY_FUND,
 } from '../lib/mockData';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const DEFAULT_WORKSPACE: Workspace = {
   id: 'ws_roysambu_4b',
@@ -97,6 +98,40 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
   const currentRoommate = roommates.find((r) => r.id === currentRoommateId) || roommates[0];
+
+  useEffect(() => {
+    if (isSupabaseConfigured && supabase) {
+      const client = supabase;
+      client.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          const email = session.user.email || '';
+          const name = session.user.user_metadata?.full_name || email.split('@')[0];
+          setRoommates((prev) => {
+            const exists = prev.some((r) => r.id === session.user.id || r.name.toLowerCase() === name.toLowerCase());
+            if (exists) return prev;
+            return [
+              ...prev,
+              {
+                id: session.user.id,
+                workspaceId: activeWorkspaceId,
+                name: name,
+                handle: `@${name.toLowerCase().replace(/\s+/g, '_')}`,
+                phone: session.user.user_metadata?.phone_number || '',
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+                role: 'member',
+                bio: 'Flatmate at ' + activeWorkspace.name,
+                diet: ['all', 'greens_lover'],
+                examPeriod: false,
+                availabilityScore: 1.0,
+                karmaScore: 100,
+                streakWeeks: 0,
+              },
+            ];
+          });
+        }
+      });
+    }
+  }, [activeWorkspaceId]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

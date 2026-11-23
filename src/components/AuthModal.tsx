@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Lock, Mail, User, ShieldCheck, Sparkles, ArrowRight, Phone } from 'lucide-react';
+import { X, Lock, Mail, User, ShieldCheck, Sparkles, ArrowRight, Phone, Loader2 } from 'lucide-react';
 import { useHouse } from '../context/HouseContext';
 import { Roommate } from '../lib/types';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,19 +19,80 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          showToast(`Supabase: ${error.message} (Switched locally)`);
+        } else if (data?.user) {
+          showToast(`Authenticated via Supabase as ${data.user.email}!`);
+          const found = roommates.find(
+            (r) => r.phone === email || r.name.toLowerCase() === (data.user.user_metadata?.full_name || '').toLowerCase()
+          );
+          if (found) setCurrentRoommateId(found.id);
+          onClose();
+          return;
+        }
+      } catch (err: any) {
+        console.warn('Supabase auth attempt:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     // Match by email or use first roommate
-    showToast(`Logged in successfully as ${currentRoommate.name}!`);
+    const matched = roommates.find((r) => r.handle.toLowerCase().includes(email.split('@')[0]?.toLowerCase() || ''));
+    if (matched) {
+      setCurrentRoommateId(matched.id);
+      showToast(`Logged in successfully as ${matched.name}!`);
+    } else {
+      showToast(`Logged in successfully as ${currentRoommate.name}!`);
+    }
+    setLoading(false);
     onClose();
   };
 
-  const handleSignUpSubmit = (e: React.FormEvent) => {
+  const handleSignUpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
+    setLoading(true);
+
+    if (isSupabaseConfigured && supabase && email && password) {
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+              phone_number: phone,
+            },
+          },
+        });
+
+        if (error) {
+          showToast(`Supabase Notice: ${error.message}`);
+        } else {
+          showToast(`Supabase user registered: ${email}!`);
+        }
+      } catch (err: any) {
+        console.warn('Supabase sign up error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
 
     const newRoomie: Roommate = {
       id: `user_${Date.now()}`,
@@ -51,6 +113,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     handleInviteRoommate(newRoomie);
     setCurrentRoommateId(newRoomie.id);
     showToast(`Account created for ${name}! Welcome to ${activeWorkspace.name}.`);
+    setLoading(false);
     onClose();
   };
 
@@ -177,9 +240,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
             <button
               type="submit"
-              className="w-full py-2.5 bg-electric-500 hover:bg-electric-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
+              disabled={loading}
+              className="w-full py-2.5 bg-electric-500 hover:bg-electric-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2"
             >
-              Sign In to Profile
+              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>Sign In to Profile</span>
             </button>
           </form>
         )}
@@ -200,6 +265,18 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </div>
 
             <div>
+              <label className="text-xs font-semibold text-slate-700 block mb-1">Email Address</label>
+              <input
+                type="email"
+                required
+                placeholder="victor@student.ke"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-electric-500"
+              />
+            </div>
+
+            <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">M-Pesa Phone Number</label>
               <input
                 type="text"
@@ -210,11 +287,25 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               />
             </div>
 
+            <div>
+              <label className="text-xs font-semibold text-slate-700 block mb-1">Password</label>
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-electric-500"
+              />
+            </div>
+
             <button
               type="submit"
-              className="w-full py-2.5 bg-electric-500 hover:bg-electric-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
+              disabled={loading}
+              className="w-full py-2.5 bg-electric-500 hover:bg-electric-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2"
             >
-              Create Account & Join Flat
+              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>Create Account & Join Flat</span>
             </button>
           </form>
         )}

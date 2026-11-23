@@ -138,13 +138,49 @@ CREATE TABLE IF NOT EXISTS public.emergency_fund_units (
 );
 
 -- Enable Row Level Security (RLS)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspaces ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workspace_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expense_line_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.parliament_bills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.parliament_votes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.emergency_funds ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.emergency_fund_units ENABLE ROW LEVEL SECURITY;
 
--- Allow public read & insert for initial MVP (Can be restricted per auth.uid() later)
-CREATE POLICY "Public workspaces access" ON public.workspaces FOR ALL USING (true);
-CREATE POLICY "Public expenses access" ON public.expenses FOR ALL USING (true);
-CREATE POLICY "Public chores access" ON public.chores FOR ALL USING (true);
-CREATE POLICY "Public bills access" ON public.parliament_bills FOR ALL USING (true);
+-- Allow public read & write policies for MVP
+CREATE POLICY "Public profiles access" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public workspaces access" ON public.workspaces FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public workspace_members access" ON public.workspace_members FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public expenses access" ON public.expenses FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public expense_line_items access" ON public.expense_line_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public chores access" ON public.chores FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public bills access" ON public.parliament_bills FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public votes access" ON public.parliament_votes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public funds access" ON public.emergency_funds FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public units access" ON public.emergency_fund_units FOR ALL USING (true) WITH CHECK (true);
+
+-- Auto-create profile on signup trigger
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, handle, phone_number, avatar_url)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', 'Student Flatmate'),
+    COALESCE(NEW.raw_user_meta_data->>'handle', '@' || SPLIT_PART(NEW.email, '@', 1)),
+    COALESCE(NEW.raw_user_meta_data->>'phone_number', ''),
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=' || NEW.id::text
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    full_name = EXCLUDED.full_name,
+    phone_number = EXCLUDED.phone_number;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
