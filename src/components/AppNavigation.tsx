@@ -19,6 +19,7 @@ import {
   MessageSquare,
   LogIn,
   Settings,
+  ShieldAlert,
 } from 'lucide-react';
 import { useHouse } from '../context/HouseContext';
 
@@ -47,6 +48,7 @@ export function AppNavigation() {
     setWorkspaceModalMode,
     setIsAuthModalOpen,
     setIsProfileModalOpen,
+    setIsInfractionModalOpen,
     showToast,
   } = useHouse();
 
@@ -144,6 +146,16 @@ export function AppNavigation() {
           >
             <LogIn className="w-3.5 h-3.5 text-slate-500" />
             <span>Login</span>
+          </button>
+
+          {/* Report Kosa (Infraction) Button */}
+          <button
+            onClick={() => setIsInfractionModalOpen(true)}
+            title="Report a Rule Infraction"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-200 hover:border-rose-400 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-all"
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
+            <span>Report Kosa</span>
           </button>
 
           {/* Paste M-Pesa Primary Button */}

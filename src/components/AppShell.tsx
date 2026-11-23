@@ -8,6 +8,8 @@ import { WorkspaceModal } from './WorkspaceModal';
 import { AIChatDrawer } from './AIChatDrawer';
 import { AuthModal } from './AuthModal';
 import { ProfileModal } from './ProfileModal';
+import { ReportInfractionModal } from './ReportInfractionModal';
+import { WhatsAppPreviewDrawer } from './WhatsAppPreviewDrawer';
 import { useHouse } from '../context/HouseContext';
 import { Sparkles } from 'lucide-react';
 
@@ -24,6 +26,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setIsAuthModalOpen,
     isProfileModalOpen,
     setIsProfileModalOpen,
+    isInfractionModalOpen,
+    setIsInfractionModalOpen,
     activeWorkspace,
     handleCreateWorkspace,
     handleInviteRoommate,
@@ -51,6 +55,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Interactive AI Arbitrator Drawer */}
       <AIChatDrawer />
 
+      {/* WhatsApp Bot Simulator (floats above AI drawer) */}
+      <WhatsAppPreviewDrawer />
+
       {/* Auth & Profile Modals */}
       <AuthModal
         isOpen={isAuthModalOpen}
@@ -60,6 +67,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <ProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
+      />
+
+      {/* Infraction Reporter Modal */}
+      <ReportInfractionModal
+        isOpen={isInfractionModalOpen}
+        onClose={() => setIsInfractionModalOpen(false)}
       />
 
       {/* Communal Footer */}

@@ -2,11 +2,12 @@
 
 import React from 'react';
 import { ExpenseHistory } from '../../components/ExpenseHistory';
+import { TransportSplitter } from '../../components/TransportSplitter';
 import { useHouse } from '../../context/HouseContext';
 import { Plus, ShieldCheck, Zap } from 'lucide-react';
 
 export default function ExpensesPage() {
-  const { expenses, roommates, setIsMpesaModalOpen } = useHouse();
+  const { expenses, roommates, setIsMpesaModalOpen, handleAddExpense } = useHouse();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -32,6 +33,9 @@ export default function ExpensesPage() {
 
       {/* Detailed Ledger & Sub-Splits */}
       <ExpenseHistory expenses={expenses} roommates={roommates} />
+
+      {/* Transport & Shared Ride Fare Splitter */}
+      <TransportSplitter onAddExpense={handleAddExpense} />
     </div>
   );
 }
