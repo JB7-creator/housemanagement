@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { HouseProvider } from '../context/HouseContext';
+import { AppShell } from '../components/AppShell';
 
 export const metadata: Metadata = {
   title: 'HouseManagement — Co-living Without The Drama | RoomJustice AI',
@@ -22,8 +24,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans min-h-screen flex flex-col bg-white">
-        {children}
+      <body className="font-sans min-h-screen flex flex-col bg-white text-slate-800">
+        <HouseProvider>
+          <AppShell>{children}</AppShell>
+        </HouseProvider>
       </body>
     </html>
   );

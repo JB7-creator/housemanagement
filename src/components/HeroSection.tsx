@@ -18,11 +18,11 @@ const LIVE_EVENTS = [
 ];
 
 export function HeroSection({ onOpenMpesa, onExploreParliament }: HeroSectionProps) {
-  // Realistic university student low-budget presets (Starting from 3k / low-budget sharing)
-  const [rentKES, setRentKES] = useState(7000); // 7,000 KES flat / bedsitter shared by roommates
-  const [utilitiesKES, setUtilitiesKES] = useState(850); // Tokens + water + gas
-  const [groceriesKES, setGroceriesKES] = useState(1400); // Market vegetables + staples
-  const [roommatesCount, setRoommatesCount] = useState(2); // 2 roommates in bedsitter/1-bed
+  // Realistic university student low-budget presets starting from 4k:
+  const [rentKES, setRentKES] = useState(4000); // 4,000 KES student bedsitter/flat
+  const [utilitiesKES, setUtilitiesKES] = useState(600); // KPLC tokens + water
+  const [groceriesKES, setGroceriesKES] = useState(1200); // Sukuma + unga + staples
+  const [roommatesCount, setRoommatesCount] = useState(2); // 2 roommates sharing
 
   const [activeEventIndex, setActiveEventIndex] = useState(0);
 
@@ -126,6 +126,59 @@ export function HeroSection({ onOpenMpesa, onExploreParliament }: HeroSectionPro
                   <Users className="w-3 h-3" />
                   <span>{roommatesCount} Roommates</span>
                 </div>
+              </div>
+
+              {/* Quick Budget Presets */}
+              <div className="flex items-center gap-1.5 pt-3">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Presets:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRentKES(4000);
+                    setUtilitiesKES(500);
+                    setGroceriesKES(1000);
+                    setRoommatesCount(2);
+                  }}
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded transition-all ${
+                    rentKES === 4000
+                      ? 'bg-electric-500 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Bedsitter (4K)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRentKES(7000);
+                    setUtilitiesKES(850);
+                    setGroceriesKES(1600);
+                    setRoommatesCount(2);
+                  }}
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded transition-all ${
+                    rentKES === 7000
+                      ? 'bg-electric-500 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  1-Bed (7K)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRentKES(10000);
+                    setUtilitiesKES(1400);
+                    setGroceriesKES(2400);
+                    setRoommatesCount(3);
+                  }}
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded transition-all ${
+                    rentKES === 10000
+                      ? 'bg-electric-500 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Shared Flat (10K)
+                </button>
               </div>
 
               {/* Sliders tailored for Student / Low-Budget Living */}

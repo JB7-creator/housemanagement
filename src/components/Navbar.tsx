@@ -10,6 +10,7 @@ interface NavbarProps {
   workspaces: Workspace[];
   activeWorkspace: Workspace;
   onOpenMpesaModal: () => void;
+  onOpenProfile: () => void;
   onSelectRoommate: (id: string) => void;
   onSelectWorkspace: (id: string) => void;
   onOpenCreateWorkspace: () => void;
@@ -22,6 +23,7 @@ export function Navbar({
   workspaces,
   activeWorkspace,
   onOpenMpesaModal,
+  onOpenProfile,
   onSelectRoommate,
   onSelectWorkspace,
   onOpenCreateWorkspace,
@@ -118,19 +120,24 @@ export function Navbar({
             <span>Paste M-Pesa</span>
           </button>
 
-          {/* Current Avatar */}
-          <div className="relative group cursor-pointer ml-1">
+          {/* Current Avatar - Click to View & Edit Profile */}
+          <button
+            onClick={onOpenProfile}
+            type="button"
+            title={`Logged in as ${currentRoommate.name} - Click to view/edit profile`}
+            className="relative group cursor-pointer ml-1 p-0.5 rounded-full hover:ring-2 hover:ring-electric-500 transition-all focus:outline-none"
+          >
             <img
               src={currentRoommate.avatar}
               alt={currentRoommate.name}
-              className="w-9 h-9 rounded-full object-cover ring-2 ring-electric-500/20 group-hover:ring-electric-500 transition-all"
+              className="w-9 h-9 rounded-full object-cover ring-2 ring-electric-500/30 group-hover:ring-electric-500 transition-all hover:scale-105"
             />
             {currentRoommate.examPeriod && (
               <span className="absolute -top-1 -right-1 px-1 py-0.2 bg-amber-500 text-white text-[9px] font-bold rounded-full">
                 Exam
               </span>
             )}
-          </div>
+          </button>
         </div>
       </div>
     </header>

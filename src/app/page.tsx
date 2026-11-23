@@ -1,273 +1,312 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Navbar } from '../components/Navbar';
-import { HeroSection } from '../components/HeroSection';
-import { DebtHeatmap } from '../components/DebtHeatmap';
-import { RoommateProfiles } from '../components/RoommateProfiles';
-import { ExpenseHistory } from '../components/ExpenseHistory';
-import { ChoreBoard } from '../components/ChoreBoard';
-import { ParliamentSection } from '../components/ParliamentSection';
-import { EmergencyFundCard } from '../components/EmergencyFundCard';
-import { ShoppingListBuilder } from '../components/ShoppingListBuilder';
-import { MpesaPasteModal } from '../components/MpesaPasteModal';
-import { WorkspaceModal } from '../components/WorkspaceModal';
-import { FooterSection } from '../components/FooterSection';
+import React from 'react';
+import Link from 'next/link';
 import {
-  INITIAL_ROOMMATES,
-  INITIAL_EXPENSES,
-  INITIAL_CHORES,
-  INITIAL_BILLS,
-  INITIAL_EMERGENCY_FUND,
-} from '../lib/mockData';
-import { Expense, Chore, ParliamentBill, Workspace, Roommate } from '../lib/types';
-import { Sparkles } from 'lucide-react';
+  Sparkles,
+  ArrowRight,
+  Wallet,
+  Receipt,
+  CheckSquare,
+  Gavel,
+  ShoppingCart,
+  Users,
+  ShieldCheck,
+  TrendingUp,
+  Clock,
+  Send,
+  Zap,
+} from 'lucide-react';
+import { useHouse } from '../context/HouseContext';
+import { formatKES } from '../lib/utils';
+import { HeroSection } from '../components/HeroSection';
 
-const DEFAULT_WORKSPACE: Workspace = {
-  id: 'ws_roysambu_4b',
-  name: 'Flat 4B Roysambu Crew',
-  inviteCode: 'ROYS-402',
-  location: 'Roysambu, Lumumba Drive',
-  monthlyRentKES: 32000,
-  rentDueDay: 5,
-  createdAt: '2026-11-01',
-};
+export default function OverviewPage() {
+  const {
+    activeWorkspace,
+    roommates,
+    currentRoommate,
+    expenses,
+    chores,
+    bills,
+    fund,
+    setIsMpesaModalOpen,
+  } = useHouse();
 
-export default function HomePage() {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([DEFAULT_WORKSPACE]);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(DEFAULT_WORKSPACE.id);
+  // Quick stats
+  const totalSpent = expenses.reduce((sum, e) => sum + e.totalAmount, 0);
+  const pendingChores = chores.filter((c) => c.status === 'PENDING' || c.status === 'BOUNTY_OPEN');
+  const openBills = bills.filter((b) => b.status === 'OPEN' || b.status === 'ARBITRATION_REQUIRED');
+  const activeBounties = chores.filter((c) => c.status === 'BOUNTY_OPEN');
 
-  const [roommates, setRoommates] = useState<Roommate[]>(INITIAL_ROOMMATES);
-  const [expenses, setExpenses] = useState<Expense[]>(INITIAL_EXPENSES);
-  const [chores, setChores] = useState<Chore[]>(INITIAL_CHORES);
-  const [bills, setBills] = useState<ParliamentBill[]>(INITIAL_BILLS);
-  const [fund, setFund] = useState(INITIAL_EMERGENCY_FUND);
-
-  const [currentRoommateId, setCurrentRoommateId] = useState(roommates[0]?.id || 'roomie_1');
-  const [isMpesaModalOpen, setIsMpesaModalOpen] = useState(false);
-  const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
-  const [workspaceModalMode, setWorkspaceModalMode] = useState<'CREATE_WORKSPACE' | 'INVITE_MEMBER'>('CREATE_WORKSPACE');
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
-  const currentRoommate = roommates.find((r) => r.id === currentRoommateId) || roommates[0];
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
-  };
-
-  const handleCreateWorkspace = (newWs: Workspace) => {
-    setWorkspaces((prev) => [...prev, newWs]);
-    setActiveWorkspaceId(newWs.id);
-    showToast(`Created workspace: ${newWs.name}! Share code ${newWs.inviteCode} with flatmates.`);
-  };
-
-  const handleInviteRoommate = (newMember: Roommate) => {
-    setRoommates((prev) => [...prev, newMember]);
-    showToast(`Added ${newMember.name} (${newMember.handle}) to ${activeWorkspace.name}!`);
-  };
-
-  const handleAddExpense = (newExpense: Expense) => {
-    setExpenses([newExpense, ...expenses]);
-    showToast(`Recorded ${newExpense.title} (${newExpense.totalAmount} KES) to house ledger!`);
-  };
-
-  const handleClaimBounty = (choreId: string) => {
-    setChores(
-      chores.map((c) => {
-        if (c.id === choreId) {
-          return {
-            ...c,
-            status: 'COMPLETED',
-            rating: 5,
-            assignedToId: currentRoommate.id,
-          };
-        }
-        return c;
-      })
-    );
-    showToast(`${currentRoommate.name} claimed KES 50 bounty and verified chore completion!`);
-  };
-
-  const handleRateChore = (choreId: string, rating: number) => {
-    setChores(
-      chores.map((c) => {
-        if (c.id === choreId) {
-          return { ...c, rating };
-        }
-        return c;
-      })
-    );
-    showToast(`Rated chore ${rating}/5 stars.`);
-  };
-
-  const handleVoteBill = (billId: string, vote: 'PASS' | 'VETO', reason?: string) => {
-    setBills(
-      bills.map((b) => {
-        if (b.id === billId) {
-          const updatedVotes = [
-            ...b.votes.filter((v) => v.roommateId !== currentRoommate.id),
-            {
-              roommateId: currentRoommate.id,
-              vote,
-              reason: reason || (vote === 'PASS' ? 'Supported' : 'Objected'),
-              timestamp: 'Just now',
-            },
-          ];
-
-          const passCount = updatedVotes.filter((v) => v.vote === 'PASS').length;
-          const status = passCount >= b.quorumNeeded ? 'PASSED' : b.status;
-
-          return {
-            ...b,
-            votes: updatedVotes,
-            status,
-          };
-        }
-        return b;
-      })
-    );
-    showToast(`Vote recorded: ${vote}`);
-  };
-
-  const handleArbitrationVerdict = (
-    billId: string,
-    verdict: { summary: string; recommendedResolution: string; decisionTimestamp: string }
-  ) => {
-    setBills(
-      bills.map((b) => {
-        if (b.id === billId) {
-          return {
-            ...b,
-            status: 'PASSED',
-            aiArbitratorVerdict: verdict,
-          };
-        }
-        return b;
-      })
-    );
-    showToast('Brutal AI Arbitrator has rendered a final, binding decision on the bill!');
-  };
-
-  const handleScrollToSection = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
+  // Compute current roommate net balance
+  let userNetBalance = 0;
+  expenses.forEach((exp) => {
+    if (exp.payerId === currentRoommate.id) userNetBalance += exp.totalAmount;
+    exp.items.forEach((item) => {
+      if (item.participantIds.includes(currentRoommate.id)) {
+        userNetBalance -= item.cost / (item.participantIds.length || 1);
+      }
+    });
+  });
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-slate-900 text-white text-xs font-semibold shadow-2xl flex items-center gap-2 border border-slate-700 animate-in slide-in-from-bottom-5">
-          <Sparkles className="w-4 h-4 text-champagne-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      {/* Navigation with Multi-Workspace support */}
-      <Navbar
-        currentRoommate={currentRoommate}
-        roommates={roommates}
-        workspaces={workspaces}
-        activeWorkspace={activeWorkspace}
-        onOpenMpesaModal={() => setIsMpesaModalOpen(true)}
-        onSelectRoommate={(id) => setCurrentRoommateId(id)}
-        onSelectWorkspace={(id) => {
-          setActiveWorkspaceId(id);
-          const ws = workspaces.find((w) => w.id === id);
-          if (ws) showToast(`Switched to workspace: ${ws.name}`);
-        }}
-        onOpenCreateWorkspace={() => {
-          setWorkspaceModalMode('CREATE_WORKSPACE');
-          setIsWorkspaceModalOpen(true);
-        }}
-        onOpenInviteMember={() => {
-          setWorkspaceModalMode('INVITE_MEMBER');
-          setIsWorkspaceModalOpen(true);
-        }}
-      />
-
-      {/* Hero Section with Live Simulator */}
+    <div className="space-y-10 pb-16">
+      {/* Live Hero with Interactive Budget Simulator */}
       <HeroSection
         onOpenMpesa={() => setIsMpesaModalOpen(true)}
-        onExploreParliament={() => handleScrollToSection('parliament-section')}
+        onExploreParliament={() => {}}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
-        {/* Module 1: Roommate Profiles Directory */}
-        <section id="profiles-section">
-          <RoommateProfiles roommates={roommates} />
-        </section>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Welcome & Flat Summary Bar */}
+        <div className="p-6 rounded-2xl bg-gradient-to-r from-electric-50/50 via-white to-champagne-50/40 border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-electric-600 font-mono">
+                {activeWorkspace.location}
+              </span>
+              <span className="text-slate-300">•</span>
+              <span className="text-xs text-slate-500">Rent Due on {activeWorkspace.rentDueDay}th</span>
+            </div>
+            <h2 className="text-2xl font-extrabold text-slate-900 font-display mt-0.5">
+              Welcome back, {currentRoommate.name}
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Here is your flat overview. You have {activeBounties.length} open chore bounty and {openBills.length} pending legislative vote.
+            </p>
+          </div>
 
-        {/* Module 2: Visual Debt Heatmap & Directed Settlements */}
-        <section id="debt-section">
-          <DebtHeatmap
-            roommates={roommates}
-            expenses={expenses}
-            onSettleSuccess={({ fromName, toName, amount }) =>
-              showToast(`Verified M-Pesa transfer: ${fromName} paid ${toName} Ksh ${amount}`)
-            }
-          />
-        </section>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/finances"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-electric-500 hover:bg-electric-600 text-white text-xs font-bold shadow-sm transition-all"
+            >
+              <Wallet className="w-4 h-4" />
+              <span>View Debt Matrix</span>
+            </Link>
+            <Link
+              href="/chores"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold shadow-xs transition-all"
+            >
+              <CheckSquare className="w-4 h-4 text-champagne-600" />
+              <span>Chore Timetable</span>
+            </Link>
+          </div>
+        </div>
 
-        {/* Module 3: Expense Ledger & Line-Item Sub-Splits */}
-        <section id="ledger-section">
-          <ExpenseHistory expenses={expenses} roommates={roommates} />
-        </section>
+        {/* 4 Concise Metric Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Your Net Balance */}
+          <Link
+            href="/finances"
+            className="p-5 rounded-xl border border-slate-200 bg-white hover:border-electric-300 hover:shadow-xs transition-all group"
+          >
+            <div className="flex items-center justify-between text-slate-400 mb-3">
+              <span className="text-xs font-semibold text-slate-500">Your Net Balance</span>
+              <div className="w-8 h-8 rounded-lg bg-electric-50 text-electric-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Wallet className="w-4 h-4" />
+              </div>
+            </div>
+            <span
+              className={`font-mono text-2xl font-extrabold block ${
+                userNetBalance > 0
+                  ? 'text-emerald-600'
+                  : userNetBalance < 0
+                  ? 'text-amber-600'
+                  : 'text-slate-800'
+              }`}
+            >
+              {userNetBalance > 0 && '+'}
+              {formatKES(Math.round(userNetBalance))}
+            </span>
+            <span className="text-[11px] text-slate-400 mt-1 block flex items-center gap-1">
+              <span>{userNetBalance >= 0 ? 'House owes you' : 'You owe flatmates'}</span>
+              <ArrowRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+            </span>
+          </Link>
 
-        {/* Module 4: Envy-Free Weekly Chore Board */}
-        <section id="chores-section">
-          <ChoreBoard
-            chores={chores}
-            roommates={roommates}
-            onClaimBounty={handleClaimBounty}
-            onRateChore={handleRateChore}
-          />
-        </section>
+          {/* Card 2: Today's Chores */}
+          <Link
+            href="/chores"
+            className="p-5 rounded-xl border border-slate-200 bg-white hover:border-amber-300 hover:shadow-xs transition-all group"
+          >
+            <div className="flex items-center justify-between text-slate-400 mb-3">
+              <span className="text-xs font-semibold text-slate-500">Chores & Bounties</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <CheckSquare className="w-4 h-4" />
+              </div>
+            </div>
+            <span className="font-mono text-2xl font-extrabold text-slate-900 block">
+              {pendingChores.length} Pending
+            </span>
+            <span className="text-[11px] text-amber-700 font-semibold mt-1 block flex items-center gap-1">
+              <span>{activeBounties.length} KES 50 Bounty active</span>
+              <ArrowRight className="w-3 h-3 text-amber-600 group-hover:translate-x-0.5 transition-transform" />
+            </span>
+          </Link>
 
-        {/* Module 5: House Parliament & Democratic Bills */}
-        <section id="parliament-section">
-          <ParliamentSection
-            bills={bills}
-            roommates={roommates}
-            currentRoommate={currentRoommate}
-            onVote={handleVoteBill}
-            onRequestArbitration={handleArbitrationVerdict}
-          />
-        </section>
+          {/* Card 3: Parliament Legislation */}
+          <Link
+            href="/parliament"
+            className="p-5 rounded-xl border border-slate-200 bg-white hover:border-blue-300 hover:shadow-xs transition-all group"
+          >
+            <div className="flex items-center justify-between text-slate-400 mb-3">
+              <span className="text-xs font-semibold text-slate-500">Democratic Bills</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Gavel className="w-4 h-4" />
+              </div>
+            </div>
+            <span className="font-mono text-2xl font-extrabold text-slate-900 block">
+              {openBills.length} Active
+            </span>
+            <span className="text-[11px] text-slate-400 mt-1 block flex items-center gap-1">
+              <span>Quorum voting underway</span>
+              <ArrowRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+            </span>
+          </Link>
 
-        {/* Module 6: Market Shopping List & Dietary Sub-Splitter */}
-        <section id="shopping-section">
-          <ShoppingListBuilder roommates={roommates} />
-        </section>
+          {/* Card 4: Emergency Reserve Fund */}
+          <Link
+            href="/finances"
+            className="p-5 rounded-xl border border-slate-200 bg-white hover:border-emerald-300 hover:shadow-xs transition-all group"
+          >
+            <div className="flex items-center justify-between text-slate-400 mb-3">
+              <span className="text-xs font-semibold text-slate-500">Emergency Vault</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+            </div>
+            <span className="font-mono text-2xl font-extrabold text-slate-900 block">
+              {formatKES(fund.currentBalanceKES)}
+            </span>
+            <span className="text-[11px] text-emerald-600 font-semibold mt-1 block flex items-center gap-1">
+              <span>Reserve Ratio: {fund.reserveRatio}x</span>
+              <ArrowRight className="w-3 h-3 text-emerald-600 group-hover:translate-x-0.5 transition-transform" />
+            </span>
+          </Link>
+        </div>
 
-        {/* Module 7: House Emergency Sinking Fund & Buffer Pool */}
-        <section id="emergency-section">
-          <EmergencyFundCard fund={fund} roommates={roommates} />
-        </section>
-      </main>
+        {/* Quick Launchpad to Dedicated Modules */}
+        <div className="pt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display font-bold text-base text-slate-900">
+              Platform Modules
+            </h3>
+            <span className="text-xs text-slate-400">Click to open dedicated pages</span>
+          </div>
 
-      {/* Footer */}
-      <FooterSection />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Link
+              href="/finances"
+              className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-electric-400 hover:shadow-card transition-all space-y-2 block"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-electric-50 text-electric-600 flex items-center justify-center">
+                  <Wallet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-sm text-slate-900">Debts & Sinking Fund</h4>
+                  <span className="text-[11px] text-slate-400">Bitmask DP settlement paths</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed pt-1">
+                Zero circular debt. Net balances simplified down to the fewest Safaricom transfers with 1-tap verification.
+              </p>
+            </Link>
 
-      {/* Modals */}
-      <MpesaPasteModal
-        isOpen={isMpesaModalOpen}
-        onClose={() => setIsMpesaModalOpen(false)}
-        roommates={roommates}
-        onAddExpense={handleAddExpense}
-      />
+            <Link
+              href="/expenses"
+              className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-electric-400 hover:shadow-card transition-all space-y-2 block"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <Receipt className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-sm text-slate-900">Expenses & M-Pesa</h4>
+                  <span className="text-[11px] text-slate-400">Audit trail & line-item splits</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed pt-1">
+                Paste Safaricom SMS receipts. Break down bills so vegetarians never pay for meat and milk-intolerant flatmates skip dairy.
+              </p>
+            </Link>
 
-      <WorkspaceModal
-        isOpen={isWorkspaceModalOpen}
-        mode={workspaceModalMode}
-        activeWorkspace={activeWorkspace}
-        onClose={() => setIsWorkspaceModalOpen(false)}
-        onCreateWorkspace={handleCreateWorkspace}
-        onInviteRoommate={handleInviteRoommate}
-      />
+            <Link
+              href="/chores"
+              className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-electric-400 hover:shadow-card transition-all space-y-2 block"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <CheckSquare className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-sm text-slate-900">Chores & Bounties</h4>
+                  <span className="text-[11px] text-slate-400">Snake Round-Robin (EF1)</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed pt-1">
+                Envy-free chore load balancing with exam relief. Missed deadlines turn into KES 50 bounties for roommates.
+              </p>
+            </Link>
+
+            <Link
+              href="/parliament"
+              className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-electric-400 hover:shadow-card transition-all space-y-2 block"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Gavel className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-sm text-slate-900">House Parliament</h4>
+                  <span className="text-[11px] text-slate-400">Speaker of the House AI</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed pt-1">
+                Democratic legislation for Wi-Fi, rules, and amenities. Deadlocks trigger strict rulings from our AI Arbitrator.
+              </p>
+            </Link>
+
+            <Link
+              href="/shopping"
+              className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-electric-400 hover:shadow-card transition-all space-y-2 block"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-champagne-50 text-champagne-700 flex items-center justify-center">
+                  <ShoppingCart className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-sm text-slate-900">Market Shopping List</h4>
+                  <span className="text-[11px] text-slate-400">Mama Mboga list builder</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed pt-1">
+                Collaborative shopping list with dietary filters. Download a printable receipt for the market trip.
+              </p>
+            </Link>
+
+            <Link
+              href="/members"
+              className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-electric-400 hover:shadow-card transition-all space-y-2 block"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-sm text-slate-900">Flatmates & Settings</h4>
+                  <span className="text-[11px] text-slate-400">Roommate profiles & invite codes</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed pt-1">
+                View member profiles, karma scores, exam periods, invite codes, and apartment rent due dates.
+              </p>
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
