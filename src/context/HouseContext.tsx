@@ -60,6 +60,7 @@ interface HouseContextType {
   currentRoommate: Roommate;
   setCurrentRoommateId: (id: string) => void;
   handleInviteRoommate: (member: Roommate) => void;
+  handleUpdateProfile: (updated: Partial<Roommate>) => void;
 
   expenses: Expense[];
   handleAddExpense: (expense: Expense) => void;
@@ -137,10 +138,57 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
 
-  // Restore authenticated session from localStorage on client load
+  // Restore authenticated session & persisted database entities from localStorage on client load
   useEffect(() => {
-    setIsHydrated(true);
     try {
+      // 1. Restore Roommates from persistent storage
+      const storedRoomies = localStorage.getItem('roomjustice_roommates_data');
+      if (storedRoomies) {
+        try {
+          const parsed = JSON.parse(storedRoomies);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setAllRoommates(parsed);
+          }
+        } catch (e) {}
+      }
+
+      // 2. Restore Workspaces from persistent storage
+      const storedWs = localStorage.getItem('roomjustice_workspaces_data');
+      if (storedWs) {
+        try {
+          const parsed = JSON.parse(storedWs);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setWorkspaces(parsed);
+          }
+        } catch (e) {}
+      }
+
+      // 3. Restore Expenses, Chores, Bills from persistent storage
+      const storedExp = localStorage.getItem('roomjustice_expenses_data');
+      if (storedExp) {
+        try {
+          const parsed = JSON.parse(storedExp);
+          if (Array.isArray(parsed)) setAllExpenses(parsed);
+        } catch (e) {}
+      }
+
+      const storedCh = localStorage.getItem('roomjustice_chores_data');
+      if (storedCh) {
+        try {
+          const parsed = JSON.parse(storedCh);
+          if (Array.isArray(parsed)) setAllChores(parsed);
+        } catch (e) {}
+      }
+
+      const storedBi = localStorage.getItem('roomjustice_bills_data');
+      if (storedBi) {
+        try {
+          const parsed = JSON.parse(storedBi);
+          if (Array.isArray(parsed)) setAllBills(parsed);
+        } catch (e) {}
+      }
+
+      // 4. Restore Authentication Session
       const storedAuth = localStorage.getItem('roomjustice_is_authenticated');
       const storedRoomieId = localStorage.getItem('roomjustice_current_roommate_id');
       const storedWsId = localStorage.getItem('roomjustice_active_ws_id');
@@ -154,8 +202,106 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       console.warn('LocalStorage session read error:', e);
+    } finally {
+      setIsHydrated(true);
     }
   }, []);
+
+  // Automatic write-through persistence to localStorage whenever state entities mutate (after hydration)
+  useEffect(() => {
+    if (!isHydrated) return;
+    try {
+      localStorage.setItem('roomjustice_roommates_data', JSON.stringify(allRoommates));
+    } catch (e) {}
+  }, [allRoommates, isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    try {
+      localStorage.setItem('roomjustice_workspaces_data', JSON.stringify(workspaces));
+    } catch (e) {}
+  }, [workspaces, isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    try {
+      localStorage.setItem('roomjustice_expenses_data', JSON.stringify(allExpenses));
+    } catch (e) {}
+  }, [allExpenses, isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    try {
+      localStorage.setItem('roomjustice_chores_data', JSON.stringify(allChores));
+    } catch (e) {}
+  }, [allChores, isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    try {
+      localStorage.setItem('roomjustice_bills_data', JSON.stringify(allBills));
+    } catch (e) {}
+  }, [allBills, isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    try {
+      if (activeWorkspaceId) {
+        localStorage.setItem('roomjustice_active_ws_id', activeWorkspaceId);
+      }
+    } catch (e) {}
+  }, [activeWorkspaceId, isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    try {
+      if (currentRoommateId) {
+        localStorage.setItem('roomjustice_current_roommate_id', currentRoommateId);
+      }
+    } catch (e) {}
+  }, [currentRoommateId, isHydrated]);
+
+  // Update profile permanently (React state + LocalStorage + Supabase PostgreSQL)
+  const handleUpdateProfile = (updated: Partial<Roommate>) => {
+    setAllRoommates((prev) => {
+      const next = prev.map((r) => {
+        if (r.id === currentRoommate.id) {
+          return {
+            ...r,
+            ...updated,
+          };
+        }
+        return r;
+      });
+      try {
+        localStorage.setItem('roomjustice_roommates_data', JSON.stringify(next));
+      } catch (e) {
+        console.warn('LocalStorage save error:', e);
+      }
+      return next;
+    });
+
+    // Synchronize to Supabase if logged in
+    if (isSupabaseConfigured && supabase) {
+      const client = supabase;
+      client.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          client.from('profiles').upsert({
+            id: user.id,
+            full_name: updated.name || currentRoommate.name,
+            phone_number: updated.phone || currentRoommate.phone,
+            bio: updated.bio !== undefined ? updated.bio : currentRoommate.bio,
+            avatar_url: updated.avatar || currentRoommate.avatar,
+            updated_at: new Date().toISOString(),
+          }).then(({ error }) => {
+            if (error) console.warn('Supabase profile sync notice:', error.message);
+          });
+        }
+      }).catch(() => {});
+    }
+
+    showToast('Profile updated & permanently saved to database!');
+  };
 
   const loginUser = (roommateId: string) => {
     const found = allRoommates.find((r) => r.id === roommateId);
@@ -224,38 +370,72 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
     }
   }, [activeWorkspaceId, roommates, currentRoommateId]);
 
-  // Sync Supabase Auth session on mount
+  // Sync Supabase Auth session & remote profiles on mount
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
       const client = supabase;
-      client.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          const email = session.user.email || '';
-          const name = session.user.user_metadata?.full_name || email.split('@')[0];
-          setAllRoommates((prev) => {
-            const exists = prev.some((r) => r.id === session.user.id || r.name.toLowerCase() === name.toLowerCase());
-            if (exists) return prev;
-            return [
-              ...prev,
-              {
-                id: session.user.id,
-                workspaceId: activeWorkspaceId,
-                name: name,
-                handle: `@${name.toLowerCase().replace(/\s+/g, '_')}`,
-                phone: session.user.user_metadata?.phone_number || '',
-                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
-                role: 'member',
-                bio: 'Flatmate at ' + activeWorkspace.name,
-                diet: ['all', 'greens_lover'],
-                examPeriod: false,
-                availabilityScore: 1.0,
-                karmaScore: 100,
-                streakWeeks: 0,
-              },
-            ];
-          });
+      const syncSession = async () => {
+        try {
+          const { data: { session } } = await client.auth.getSession();
+          if (session?.user) {
+            const email = session.user.email || '';
+            const defaultName = session.user.user_metadata?.full_name || email.split('@')[0];
+
+            // Query remote profiles table in Supabase
+            const { data: profile } = await client
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+
+            const finalName = profile?.full_name || defaultName;
+            const finalPhone = profile?.phone_number || session.user.user_metadata?.phone_number || '';
+            const finalBio = profile?.bio || 'Flatmate at ' + activeWorkspace.name;
+            const finalAvatar =
+              profile?.avatar_url ||
+              `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(finalName)}`;
+
+            setAllRoommates((prev) => {
+              const idx = prev.findIndex((r) => r.id === session.user.id);
+              if (idx >= 0) {
+                return prev.map((r, i) =>
+                  i === idx
+                    ? {
+                        ...r,
+                        name: finalName,
+                        phone: finalPhone || r.phone,
+                        bio: finalBio || r.bio,
+                        avatar: finalAvatar || r.avatar,
+                      }
+                    : r
+                );
+              } else {
+                return [
+                  ...prev,
+                  {
+                    id: session.user.id,
+                    workspaceId: activeWorkspaceId,
+                    name: finalName,
+                    handle: `@${finalName.toLowerCase().replace(/\s+/g, '_')}`,
+                    phone: finalPhone,
+                    avatar: finalAvatar,
+                    role: 'member',
+                    bio: finalBio,
+                    diet: ['all', 'greens_lover'],
+                    examPeriod: false,
+                    availabilityScore: 1.0,
+                    karmaScore: 100,
+                    streakWeeks: 0,
+                  },
+                ];
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('Supabase profile fetch notice:', e);
         }
-      });
+      };
+      syncSession();
     }
   }, [activeWorkspaceId]);
 
@@ -953,6 +1133,7 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
         currentRoommate,
         setCurrentRoommateId,
         handleInviteRoommate,
+        handleUpdateProfile,
         expenses,
         handleAddExpense,
         chores,

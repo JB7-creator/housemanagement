@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { useHouse } from '../context/HouseContext';
 import { Roommate, DietaryPreference } from '../lib/types';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { KenyanPhoneInput } from './KenyanPhoneInput';
 
 interface ProfileModalProps {
@@ -27,7 +26,7 @@ interface ProfileModalProps {
 }
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
-  const { currentRoommate, roommates, showToast } = useHouse();
+  const { currentRoommate, handleUpdateProfile, showToast } = useHouse();
 
   const [name, setName] = useState(currentRoommate.name);
   const [phone, setPhone] = useState(currentRoommate.phone);
@@ -88,32 +87,17 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     if (isGreens) newDiet.push('greens_lover');
     if (newDiet.length === 0) newDiet.push('all');
 
-    // Update in memory
-    currentRoommate.name = name;
-    currentRoommate.phone = phone;
-    currentRoommate.bio = bio;
-    currentRoommate.avatar = avatar;
-    currentRoommate.diet = newDiet;
-    currentRoommate.examPeriod = examActive;
-    currentRoommate.availabilityScore = examActive ? 0.2 : 1.0;
+    // Update profile permanently through context (updates state + localStorage + Supabase DB)
+    handleUpdateProfile({
+      name,
+      phone,
+      bio,
+      avatar,
+      diet: newDiet,
+      examPeriod: examActive,
+      availabilityScore: examActive ? 0.2 : 1.0,
+    });
 
-    // Synchronize to Supabase if logged in
-    if (isSupabaseConfigured && supabase) {
-      const client = supabase;
-      client.auth.getUser().then(({ data: { user } }) => {
-        if (user) {
-          client.from('profiles').upsert({
-            id: user.id,
-            full_name: name,
-            phone_number: phone,
-            bio: bio,
-            avatar_url: avatar,
-          }).then(() => {});
-        }
-      }).catch(() => {});
-    }
-
-    showToast('Profile updated! Your dietary splits, phone, and photo are synchronized.');
     onClose();
   };
 
