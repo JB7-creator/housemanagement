@@ -1,10 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, User, Phone, Leaf, Milk, GraduationCap, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import {
+  X,
+  User,
+  Phone,
+  Leaf,
+  Milk,
+  GraduationCap,
+  CheckCircle2,
+  ShieldCheck,
+  Sparkles,
+  Upload,
+  Camera,
+  Image as ImageIcon,
+  RotateCcw,
+} from 'lucide-react';
 import { useHouse } from '../context/HouseContext';
 import { Roommate, DietaryPreference } from '../lib/types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { KenyanPhoneInput } from './KenyanPhoneInput';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -24,7 +39,45 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const [isGreens, setIsGreens] = useState(currentRoommate.diet.includes('greens_lover'));
   const [examActive, setExamActive] = useState(currentRoommate.examPeriod);
 
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   if (!isOpen) return null;
+
+  // Handle local file selection and convert to Base64 data URL
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (PNG, JPG, WebP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image file too large. Please upload an image under 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setAvatar(dataUrl);
+        showToast('Photo loaded from your files!');
+      }
+    };
+    reader.onerror = () => {
+      showToast('Failed to read image file');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const resetToDicebear = () => {
+    const fresh = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'roomie')}`;
+    setAvatar(fresh);
+    showToast('Reset avatar to generated illustration');
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,13 +113,13 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       }).catch(() => {});
     }
 
-    showToast('Profile updated! Your dietary splits and exam relief are synchronized.');
+    showToast('Profile updated! Your dietary splits, phone, and photo are synchronized.');
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-5 animate-in fade-in zoom-in-95">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
@@ -78,7 +131,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 Customize Your Private Profile
               </h3>
               <p className="text-[11px] text-slate-400">
-                Manage your identity, M-Pesa phone number, and dietary rules
+                Upload profile photo, M-Pesa phone number, and dietary fairness rules
               </p>
             </div>
           </div>
@@ -88,23 +141,94 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         </div>
 
         <form onSubmit={handleSave} className="space-y-4">
-          {/* Avatar & Name preview */}
-          <div className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
-            <img src={avatar} alt={name} className="w-14 h-14 rounded-full object-cover ring-2 ring-electric-500" />
-            <div className="flex-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                Avatar Image URL (or type a seed)
-              </label>
-              <input
-                type="text"
-                value={avatar}
-                onChange={(e) => setAvatar(e.target.value)}
-                className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white"
-              />
+          
+          {/* Avatar & File Upload Block */}
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 block">
+              Profile Photo & Avatar
+            </span>
+            
+            <div className="flex items-center gap-4">
+              <div className="relative group shrink-0">
+                <img
+                  src={avatar}
+                  alt={name}
+                  className="w-16 h-16 rounded-full object-cover ring-2 ring-electric-500 shadow-sm bg-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 bg-slate-900/40 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Upload from files"
+                >
+                  <Camera className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 space-y-2">
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/png, image/jpeg, image/webp, image/gif"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-semibold text-slate-800 shadow-2xs transition-colors"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-electric-600" />
+                    <span>Upload from Files</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={resetToDicebear}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-slate-200 text-slate-500 text-xs transition-colors"
+                    title="Generate illustration avatar"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowUrlInput(!showUrlInput)}
+                    className="text-[11px] text-electric-600 hover:underline"
+                  >
+                    {showUrlInput ? 'Hide URL' : 'Paste Image URL'}
+                  </button>
+                </div>
+
+                <p className="text-[10px] text-slate-400">
+                  Select a photo directly from your device (JPG, PNG, WebP up to 5MB)
+                </p>
+              </div>
             </div>
+
+            {/* Optional URL input toggle */}
+            {showUrlInput && (
+              <div className="pt-2 border-t border-slate-200">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                  Or Image Web URL
+                </label>
+                <input
+                  type="url"
+                  value={avatar}
+                  onChange={(e) => setAvatar(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-electric-500 font-mono"
+                />
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* Full Name & Kenyan Phone Input */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">Full Name</label>
               <input
@@ -112,28 +236,30 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full text-xs p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-electric-500"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-electric-500"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">M-Pesa Phone Number</label>
-              <input
-                type="text"
+              <label className="text-xs font-semibold text-slate-700 block mb-1">
+                Kenyan M-Pesa Phone Number
+              </label>
+              <KenyanPhoneInput
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full text-xs p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-electric-500 font-mono"
+                onChange={setPhone}
+                placeholder="712 345 678"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Bio / Notes</label>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">Bio / Flat Notes</label>
             <input
               type="text"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full text-xs p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-electric-500"
+              placeholder="e.g. Room 3 · Engineering student · Night owl"
+              className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-electric-500"
             />
           </div>
 

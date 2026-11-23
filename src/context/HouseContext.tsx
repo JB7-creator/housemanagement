@@ -195,29 +195,181 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Create New Flat Workspace with its own isolated creator, chores, and bill
+  // Create New Flat Workspace with its own rich isolated full environment
   const handleCreateWorkspace = (newWs: Workspace) => {
-    // 1. Isolated Coordinator for the new flat
+    const timestamp = Date.now();
+
+    // 1. Coordinator for the new flat (Current User)
     const newCoordinator: Roommate = {
-      id: `coord_${Date.now()}`,
+      id: `coord_${timestamp}`,
       workspaceId: newWs.id,
       name: currentRoommate ? currentRoommate.name : 'Flat Coordinator',
       handle: `@${(currentRoommate ? currentRoommate.name : 'coordinator').toLowerCase().replace(/\s+/g, '_')}`,
       phone: currentRoommate ? currentRoommate.phone : '0712345678',
-      avatar: currentRoommate ? currentRoommate.avatar : `https://api.dicebear.com/7.x/avataaars/svg?seed=${newWs.id}`,
+      avatar: currentRoommate ? currentRoommate.avatar : `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80`,
       role: 'coordinator',
       bio: `Founder & Coordinator of ${newWs.name}`,
       diet: currentRoommate ? currentRoommate.diet : ['all', 'greens_lover'],
       examPeriod: false,
       availabilityScore: 1.0,
-      karmaScore: 100,
-      streakWeeks: 0,
+      karmaScore: 120,
+      streakWeeks: 1,
     };
 
-    // 2. Isolated Starter Chores for this new flat
+    // 2. Realistic Co-tenants / Roommates for a full living environment
+    const roommateTreasurer: Roommate = {
+      id: `roomie_${timestamp}_1`,
+      workspaceId: newWs.id,
+      name: 'Amani Kamau',
+      handle: '@amani_k',
+      phone: '0711223344',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
+      role: 'treasurer',
+      bio: 'Finance & Accounting finalist · Safaricom M-Pesa ledger auditor',
+      diet: ['all', 'greens_lover'],
+      examPeriod: false,
+      availabilityScore: 1.0,
+      karmaScore: 135,
+      streakWeeks: 4,
+    };
+
+    const roommateFaith: Roommate = {
+      id: `roomie_${timestamp}_2`,
+      workspaceId: newWs.id,
+      name: 'Faith Chebet',
+      handle: '@faith_c',
+      phone: '0722334455',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80',
+      role: 'member',
+      bio: 'Nursing student · Morning person · Vegetarian & Chapati chef',
+      diet: ['vegetarian'],
+      examPeriod: false,
+      availabilityScore: 0.9,
+      karmaScore: 110,
+      streakWeeks: 3,
+    };
+
+    const roommateIan: Roommate = {
+      id: `roomie_${timestamp}_3`,
+      workspaceId: newWs.id,
+      name: 'Ian Mutua',
+      handle: '@ian_m',
+      phone: '0733445566',
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80',
+      role: 'member',
+      bio: 'Software Eng · Night owl gamer · Lactose intolerant',
+      diet: ['lactose_intolerant', 'greens_lover'],
+      examPeriod: false,
+      availabilityScore: 1.0,
+      karmaScore: 102,
+      streakWeeks: 5,
+    };
+
+    const allNewRoommates = [newCoordinator, roommateTreasurer, roommateFaith, roommateIan];
+    const memberIds = allNewRoommates.map((r) => r.id);
+
+    // 3. Isolated Realistic Starter Expenses for this flat
+    const starterExpenses: Expense[] = [
+      {
+        id: `exp_${timestamp}_1`,
+        workspaceId: newWs.id,
+        payerId: newCoordinator.id,
+        title: 'Safaricom 5G Home Wi-Fi Setup (50Mbps)',
+        category: 'HOUSE_BUFFER',
+        totalAmount: 3500,
+        date: 'Today, 10:30 AM',
+        mpesaCode: `SAF${Math.floor(100000 + Math.random() * 900000)}`,
+        verified: true,
+        items: [
+          {
+            id: `item_${timestamp}_1`,
+            name: 'Monthly Unlimited 5G Fibre Router',
+            cost: 3500,
+            category: 'utilities',
+            participantIds: memberIds,
+          },
+        ],
+      },
+      {
+        id: `exp_${timestamp}_2`,
+        workspaceId: newWs.id,
+        payerId: roommateTreasurer.id,
+        title: '13kg K-Gas Communal Cylinder Refill',
+        category: 'GAS',
+        totalAmount: 2900,
+        date: 'Yesterday, 3:15 PM',
+        mpesaCode: `GAS${Math.floor(100000 + Math.random() * 900000)}`,
+        verified: true,
+        items: [
+          {
+            id: `item_${timestamp}_2`,
+            name: 'TotalEnergies 13kg Gas Refill',
+            cost: 2900,
+            category: 'utilities',
+            participantIds: memberIds,
+          },
+        ],
+      },
+      {
+        id: `exp_${timestamp}_3`,
+        workspaceId: newWs.id,
+        payerId: roommateFaith.id,
+        title: 'Market Fresh Sukuma & Veggies Run',
+        category: 'GROCERIES',
+        totalAmount: 850,
+        date: 'Yesterday, 6:00 PM',
+        mpesaCode: `VEG${Math.floor(100000 + Math.random() * 900000)}`,
+        verified: true,
+        items: [
+          {
+            id: `item_${timestamp}_3`,
+            name: 'Sukuma Wiki & Terere',
+            cost: 200,
+            category: 'greens',
+            participantIds: memberIds,
+          },
+          {
+            id: `item_${timestamp}_4`,
+            name: 'Managu Fresh Bundle',
+            cost: 250,
+            category: 'greens',
+            participantIds: [newCoordinator.id, roommateTreasurer.id, roommateIan.id],
+          },
+          {
+            id: `item_${timestamp}_5`,
+            name: 'Irish Potatoes (Waru) & Onions',
+            cost: 400,
+            category: 'carbs',
+            participantIds: memberIds,
+          },
+        ],
+      },
+      {
+        id: `exp_${timestamp}_4`,
+        workspaceId: newWs.id,
+        payerId: roommateIan.id,
+        title: 'Communal Vim Disinfectant, Mop & Brooms',
+        category: 'GROCERIES',
+        totalAmount: 620,
+        date: '2 days ago',
+        mpesaCode: `VIM${Math.floor(100000 + Math.random() * 900000)}`,
+        verified: true,
+        items: [
+          {
+            id: `item_${timestamp}_6`,
+            name: 'Vim Scourer & Floor Mop',
+            cost: 620,
+            category: 'cleaning',
+            participantIds: memberIds,
+          },
+        ],
+      },
+    ];
+
+    // 4. Isolated Starter Chores for this new flat
     const starterChores: Chore[] = [
       {
-        id: `chore_${Date.now()}_1`,
+        id: `chore_${timestamp}_1`,
         workspaceId: newWs.id,
         title: 'Kitchen Counter & Gas Cooker Sanitization',
         description: 'Wipe burners, scrub grease traps, wash communal utensils',
@@ -230,45 +382,91 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
         bountyKES: 50,
       },
       {
-        id: `chore_${Date.now()}_2`,
+        id: `chore_${timestamp}_2`,
         workspaceId: newWs.id,
         title: 'Balcony & Estate Trash Dumpster Run',
         description: 'Collect trash bags and drop at estate garbage collection point',
         difficulty: 2,
         frequency: 'daily',
-        assignedToId: newCoordinator.id,
+        assignedToId: roommateIan.id,
         dueDate: new Date().toISOString().split('T')[0],
         dueTime: '21:00',
+        status: 'PENDING',
+        bountyKES: 50,
+      },
+      {
+        id: `chore_${timestamp}_3`,
+        workspaceId: newWs.id,
+        title: 'Bathroom Scrubbing & Vim Disinfection',
+        description: 'Scrub tiles, sanitize toilet bowl, wipe mirror and taps',
+        difficulty: 4,
+        frequency: 'twice_weekly',
+        assignedToId: roommateFaith.id,
+        dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+        dueTime: '18:00',
+        status: 'PENDING',
+        bountyKES: 100,
+      },
+      {
+        id: `chore_${timestamp}_4`,
+        workspaceId: newWs.id,
+        title: '20L Drinking Water Purifier Refill Run',
+        description: 'Refill 4 water bottles from the water station at gate',
+        difficulty: 2,
+        frequency: 'weekly',
+        assignedToId: roommateTreasurer.id,
+        dueDate: new Date().toISOString().split('T')[0],
+        dueTime: '17:00',
         status: 'BOUNTY_OPEN',
         bountyKES: 50,
       },
     ];
 
-    // 3. Isolated Starter Bill for this new flat
-    const starterBill: ParliamentBill = {
-      id: `bill_${Date.now()}`,
-      workspaceId: newWs.id,
-      billNumber: 1,
-      proposerId: newCoordinator.id,
-      title: 'Ratify Flat Rules: Quiet Hours & Grocery Split Agreement',
-      description: 'Establishes 10:00 PM study hours on weekdays, vegetarian non-meat split immunity, and Ksh 50 bounty system.',
-      category: 'POLICY',
-      status: 'OPEN',
-      votes: [
-        { roommateId: newCoordinator.id, vote: 'PASS', reason: 'Founding flat charter', timestamp: 'Just now' },
-      ],
-      quorumNeeded: 1,
-      expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
-    };
+    // 5. Isolated Starter Bills for this new flat
+    const starterBills: ParliamentBill[] = [
+      {
+        id: `bill_${timestamp}_1`,
+        workspaceId: newWs.id,
+        billNumber: 1,
+        proposerId: newCoordinator.id,
+        title: 'Ratify Flat Rules: Quiet Hours & Grocery Split Agreement',
+        description: 'Establishes 10:00 PM study hours on weekdays, vegetarian non-meat split immunity, and Ksh 50 bounty system.',
+        category: 'POLICY',
+        status: 'OPEN',
+        votes: [
+          { roommateId: newCoordinator.id, vote: 'PASS', reason: 'Founding flat charter', timestamp: 'Just now' },
+        ],
+        quorumNeeded: 3,
+        expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+      },
+      {
+        id: `bill_${timestamp}_2`,
+        workspaceId: newWs.id,
+        billNumber: 2,
+        proposerId: roommateTreasurer.id,
+        title: 'Ratify High-Speed Wi-Fi & Electricity Equal Share Protocol',
+        description: 'All 4 flatmates contribute equal Ksh 875/month for 50Mbps unlimited internet on the 1st of every month.',
+        category: 'EXPENSE',
+        status: 'PASSED',
+        votes: [
+          { roommateId: roommateTreasurer.id, vote: 'PASS', reason: 'Essential for study & coursework', timestamp: 'Yesterday' },
+          { roommateId: roommateFaith.id, vote: 'PASS', reason: 'Agreed, shared cost is minimal', timestamp: 'Yesterday' },
+          { roommateId: newCoordinator.id, vote: 'PASS', reason: 'Ratified by Coordinator', timestamp: 'Just now' },
+        ],
+        quorumNeeded: 3,
+        expiresAt: new Date(Date.now() + 5 * 86400000).toISOString(),
+      },
+    ];
 
     setWorkspaces((prev) => [...prev, newWs]);
-    setAllRoommates((prev) => [...prev, newCoordinator]);
+    setAllRoommates((prev) => [...prev, ...allNewRoommates]);
+    setAllExpenses((prev) => [...starterExpenses, ...prev]);
     setAllChores((prev) => [...starterChores, ...prev]);
-    setAllBills((prev) => [starterBill, ...prev]);
+    setAllBills((prev) => [...starterBills, ...prev]);
     setActiveWorkspaceId(newWs.id);
     setCurrentRoommateId(newCoordinator.id);
 
-    showToast(`Created new flat "${newWs.name}"! Share invite code: ${newWs.inviteCode}`);
+    showToast(`Created full environment for "${newWs.name}" with 4 flatmates, expenses & chores!`);
   };
 
   // Join existing flat workspace by its invite code

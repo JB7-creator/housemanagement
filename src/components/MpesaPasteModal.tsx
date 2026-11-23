@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { X, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Tag } from 'lucide-react';
 import { parseMpesaMessage, ParsedMpesaResult } from '../lib/algorithms/mpesaParser';
 import { Roommate, Expense, LineItem } from '../lib/types';
-import { formatKES } from '../lib/utils';
+import { formatKES, formatKenyanPhoneDisplay } from '../lib/utils';
 
 interface MpesaPasteModalProps {
   isOpen: boolean;
@@ -180,7 +180,7 @@ export function MpesaPasteModal({ isOpen, onClose, roommates, onAddExpense }: Mp
             >
               {roommates.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.name}
+                  {r.name} (🇰🇪 {formatKenyanPhoneDisplay(r.phone)})
                 </option>
               ))}
             </select>

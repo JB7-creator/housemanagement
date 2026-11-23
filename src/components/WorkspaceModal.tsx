@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, Building2, UserPlus, Copy, Check, Sparkles, Hash, MapPin, DollarSign } from 'lucide-react';
 import { Workspace, Roommate, DietaryPreference } from '../lib/types';
+import { KenyanPhoneInput } from './KenyanPhoneInput';
 
 interface WorkspaceModalProps {
   isOpen: boolean;
@@ -299,14 +300,12 @@ export function WorkspaceModal({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  M-Pesa Phone Number
+                  Kenyan M-Pesa Phone Number
                 </label>
-                <input
-                  type="text"
-                  placeholder="0712345678"
+                <KenyanPhoneInput
                   value={memberPhone}
-                  onChange={(e) => setMemberPhone(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-electric-500 font-mono"
+                  onChange={setMemberPhone}
+                  placeholder="712 345 678"
                 />
               </div>
 

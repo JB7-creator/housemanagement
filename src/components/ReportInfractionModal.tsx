@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { X, ShieldAlert, AlertTriangle, Gavel, Cpu, Loader2, Sparkles, UserX } from 'lucide-react';
 import { useHouse } from '../context/HouseContext';
-import { formatKES } from '../lib/utils';
+import { formatKES, formatKenyanPhoneDisplay } from '../lib/utils';
 
 interface ReportInfractionModalProps {
   isOpen: boolean;
@@ -116,7 +116,7 @@ export function ReportInfractionModal({ isOpen, onClose }: ReportInfractionModal
               >
                 {otherRoommates.map((r) => (
                   <option key={r.id} value={r.id}>
-                    {r.name} ({r.role}) — {r.handle}
+                    {r.name} ({r.role}) — 🇰🇪 {formatKenyanPhoneDisplay(r.phone)}
                   </option>
                 ))}
               </select>

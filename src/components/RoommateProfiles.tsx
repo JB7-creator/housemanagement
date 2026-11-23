@@ -1,6 +1,7 @@
 'use client';
 
 import { Roommate, DietaryPreference } from '../lib/types';
+import { formatKenyanPhoneDisplay, getWhatsAppUrl, detectKenyanCarrier } from '../lib/utils';
 import {
   User,
   Phone,
@@ -10,6 +11,7 @@ import {
   Leaf,
   Milk,
   GraduationCap,
+  MessageCircle,
 } from 'lucide-react';
 
 // ── Helpers ─────────────────────────────────────────────────────────────
@@ -228,10 +230,26 @@ function RoommateCard({ roommate }: { roommate: Roommate }) {
           <RoleBadge role={role} />
         </div>
 
-        {/* Phone */}
-        <div className="mt-2 flex items-center justify-center gap-1 text-xs text-slate-500">
-          <Phone className="h-3 w-3" />
-          {phone}
+        {/* Phone with Kenyan Flag & Carrier Badge */}
+        <div className="mt-2.5 flex flex-col items-center gap-1.5">
+          <div className="inline-flex items-center gap-1.5 text-xs text-slate-600 font-mono bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-lg">
+            <span>🇰🇪</span>
+            <span className="font-semibold">{formatKenyanPhoneDisplay(phone)}</span>
+            <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold border ${detectKenyanCarrier(phone).badge}`}>
+              {detectKenyanCarrier(phone).name}
+            </span>
+          </div>
+
+          {/* Quick WhatsApp Action */}
+          <a
+            href={getWhatsAppUrl(phone, `Habari ${name}! Message from flatmate via RoomJustice`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#25D366] hover:text-[#1da851] transition-colors"
+          >
+            <MessageCircle className="w-3.5 h-3.5 fill-[#25D366]" />
+            <span>Chat on WhatsApp</span>
+          </a>
         </div>
 
         {/* Bio */}

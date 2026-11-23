@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowRight, CheckCircle2, TrendingUp, TrendingDown, RefreshCw, Send, DollarSign } from 'lucide-react';
+import { ArrowRight, CheckCircle2, TrendingUp, TrendingDown, RefreshCw, Send, DollarSign, MessageCircle } from 'lucide-react';
 import { Roommate, Expense } from '../lib/types';
 import { simplifyDebtsExact } from '../lib/algorithms/debtSimplifier';
-import { formatKES } from '../lib/utils';
+import { formatKES, formatKenyanPhoneDisplay, getWhatsAppUrl } from '../lib/utils';
 import confetti from 'canvas-confetti';
 
 interface DebtHeatmapProps {
@@ -158,7 +158,7 @@ export function DebtHeatmap({ roommates, expenses, onSettleSuccess }: DebtHeatma
                     <img src={from.avatar} alt={from.name} className="w-8 h-8 rounded-full object-cover" />
                     <div>
                       <span className="text-xs font-bold text-slate-900">{from.name}</span>
-                      <span className="text-[10px] text-slate-400 block font-mono">{from.phone}</span>
+                      <span className="text-[10px] text-slate-500 block font-mono">🇰🇪 {formatKenyanPhoneDisplay(from.phone)}</span>
                     </div>
 
                     <ArrowRight className="w-4 h-4 text-electric-500 shrink-0 mx-1" />
@@ -166,16 +166,32 @@ export function DebtHeatmap({ roommates, expenses, onSettleSuccess }: DebtHeatma
                     <img src={to.avatar} alt={to.name} className="w-8 h-8 rounded-full object-cover" />
                     <div>
                       <span className="text-xs font-bold text-slate-900">{to.name}</span>
-                      <span className="text-[10px] text-slate-400 block font-mono">{to.phone}</span>
+                      <span className="text-[10px] text-slate-500 block font-mono">🇰🇪 {formatKenyanPhoneDisplay(to.phone)}</span>
                     </div>
                   </div>
 
-                  {/* Amount & 1-Tap Settle */}
-                  <div className="flex items-center justify-between sm:justify-end gap-4 mt-3 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
+                  {/* Amount & 1-Tap Settle / WhatsApp reminder */}
+                  <div className="flex items-center justify-between sm:justify-end gap-3 mt-3 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
                     <div className="text-right">
                       <span className="text-[10px] text-slate-400 block">Safaricom Send Money</span>
                       <span className="font-mono text-sm font-bold text-slate-900">{formatKES(tx.amount)}</span>
                     </div>
+
+                    {!isSettled && (
+                      <a
+                        href={getWhatsAppUrl(
+                          from.phone,
+                          `Habari ${from.name}! Friendly reminder from flat ledger: You owe ${to.name} ${formatKES(tx.amount)} for recent shared flat expenses. Please settle via M-Pesa to ${formatKenyanPhoneDisplay(to.phone)}. Asante! 📲`
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 transition-colors"
+                        title="Send M-Pesa reminder via WhatsApp"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
+                        <span className="hidden sm:inline">WhatsApp</span>
+                      </a>
+                    )}
 
                     <button
                       disabled={isSettled}

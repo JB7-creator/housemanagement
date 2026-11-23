@@ -6,6 +6,7 @@ import { X, Lock, Mail, User, ShieldCheck, Sparkles, ArrowRight, Phone, Loader2 
 import { useHouse } from '../context/HouseContext';
 import { Roommate } from '../lib/types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { KenyanPhoneInput } from './KenyanPhoneInput';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -283,13 +284,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">M-Pesa Phone Number</label>
-              <input
-                type="text"
-                placeholder="0712345678"
+              <label className="text-xs font-semibold text-slate-700 block mb-1">Kenyan M-Pesa Phone</label>
+              <KenyanPhoneInput
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full text-xs p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-electric-500 font-mono"
+                onChange={setPhone}
+                placeholder="712 345 678"
               />
             </div>
 
