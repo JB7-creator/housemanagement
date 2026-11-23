@@ -57,6 +57,7 @@ export function AppNavigation() {
     setIsProfileModalOpen,
     setIsInfractionModalOpen,
     showToast,
+    logoutUser,
   } = useHouse();
 
   const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
@@ -328,6 +329,17 @@ export function AppNavigation() {
                     <Users className="w-3.5 h-3.5 text-slate-500" />
                     <span>Flatmate Directory</span>
                   </Link>
+
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      logoutUser();
+                    }}
+                    className="w-full px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-2 font-semibold transition-colors border-t border-slate-100 mt-1"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Log Out & Exit</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -382,12 +394,12 @@ export function AppNavigation() {
             <button
               onClick={() => {
                 setIsMobileMenuOpen(false);
-                setIsAuthModalOpen(true);
+                logoutUser();
               }}
-              className="text-xs font-semibold text-electric-600 flex items-center gap-1.5 px-2 py-1.5"
+              className="text-xs font-semibold text-rose-600 flex items-center gap-1.5 px-2 py-1.5"
             >
-              <LogIn className="w-4 h-4" />
-              <span>Login / Account</span>
+              <LogOut className="w-4 h-4" />
+              <span>Log Out</span>
             </button>
           </div>
         </div>

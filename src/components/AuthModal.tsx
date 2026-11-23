@@ -15,7 +15,15 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const router = useRouter();
-  const { roommates, currentRoommate, setCurrentRoommateId, showToast, handleInviteRoommate, activeWorkspace } = useHouse();
+  const {
+    roommates,
+    currentRoommate,
+    setCurrentRoommateId,
+    showToast,
+    handleInviteRoommate,
+    activeWorkspace,
+    loginUser,
+  } = useHouse();
 
   const [tab, setTab] = useState<'LOGIN' | 'SIGNUP' | 'QUICK_SWITCH'>('QUICK_SWITCH');
   const [email, setEmail] = useState('');
@@ -44,7 +52,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           const found = roommates.find(
             (r) => r.phone === email || r.name.toLowerCase() === (data.user.user_metadata?.full_name || '').toLowerCase()
           );
-          if (found) setCurrentRoommateId(found.id);
+          if (found) loginUser(found.id);
           router.push('/');
           onClose();
           return;
@@ -59,10 +67,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     // Match by email or use first roommate
     const matched = roommates.find((r) => r.handle.toLowerCase().includes(email.split('@')[0]?.toLowerCase() || ''));
     if (matched) {
-      setCurrentRoommateId(matched.id);
-      showToast(`Logged in successfully as ${matched.name}!`);
+      loginUser(matched.id);
     } else {
-      showToast(`Logged in successfully as ${currentRoommate.name}!`);
+      loginUser(currentRoommate.id);
     }
     setLoading(false);
     router.push('/');
@@ -116,7 +123,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     };
 
     handleInviteRoommate(newRoomie);
-    setCurrentRoommateId(newRoomie.id);
+    loginUser(newRoomie.id);
     showToast(`Account created for ${name}! Welcome to ${activeWorkspace.name}.`);
     setLoading(false);
     router.push('/');
@@ -188,8 +195,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   <button
                     key={r.id}
                     onClick={() => {
-                      setCurrentRoommateId(r.id);
-                      showToast(`Switched profile to ${r.name}`);
+                      loginUser(r.id);
                       router.push('/');
                       onClose();
                     }}

@@ -10,8 +10,9 @@ import { AuthModal } from './AuthModal';
 import { ProfileModal } from './ProfileModal';
 import { ReportInfractionModal } from './ReportInfractionModal';
 import { WhatsAppPreviewDrawer } from './WhatsAppPreviewDrawer';
+import { WelcomeAuthGate } from './WelcomeAuthGate';
 import { useHouse } from '../context/HouseContext';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const {
@@ -33,7 +34,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     handleInviteRoommate,
     handleJoinWorkspaceByCode,
     toastMessage,
+    isAuthenticated,
+    isHydrated,
   } = useHouse();
+
+  // Initial loading state while restoring session from localStorage
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-white">
+        <Loader2 className="w-8 h-8 text-electric-500 animate-spin mb-3" />
+        <p className="text-xs text-slate-400 font-mono">Restoring your flat environment...</p>
+      </div>
+    );
+  }
+
+  // If not authenticated, require login or registration before entering
+  if (!isAuthenticated) {
+    return <WelcomeAuthGate />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-white">

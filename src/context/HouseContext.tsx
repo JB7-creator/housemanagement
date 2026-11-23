@@ -78,6 +78,19 @@ interface HouseContextType {
 
   fund: EmergencyFundState;
 
+  // Authentication & Onboarding Gate
+  isAuthenticated: boolean;
+  isHydrated: boolean;
+  allRoommates: Roommate[];
+  loginUser: (roommateId: string) => void;
+  logoutUser: () => void;
+  registerAndOnboard: (
+    user: Partial<Roommate>,
+    workspaceChoice:
+      | { mode: 'CREATE'; ws: { name: string; location?: string; monthlyRentKES?: number; rentDueDay?: number } }
+      | { mode: 'JOIN'; inviteCode: string }
+  ) => boolean;
+
   // Modals & Notifications
   isMpesaModalOpen: boolean;
   setIsMpesaModalOpen: (open: boolean) => void;
@@ -119,6 +132,62 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isInfractionModalOpen, setIsInfractionModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Authentication & Onboarding Gate
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
+
+  // Restore authenticated session from localStorage on client load
+  useEffect(() => {
+    setIsHydrated(true);
+    try {
+      const storedAuth = localStorage.getItem('roomjustice_is_authenticated');
+      const storedRoomieId = localStorage.getItem('roomjustice_current_roommate_id');
+      const storedWsId = localStorage.getItem('roomjustice_active_ws_id');
+
+      if (storedAuth === 'true' && storedRoomieId) {
+        if (storedWsId) {
+          setActiveWorkspaceId(storedWsId);
+        }
+        setCurrentRoommateId(storedRoomieId);
+        setIsAuthenticated(true);
+      }
+    } catch (e) {
+      console.warn('LocalStorage session read error:', e);
+    }
+  }, []);
+
+  const loginUser = (roommateId: string) => {
+    const found = allRoommates.find((r) => r.id === roommateId);
+    if (!found) return;
+
+    if (found.workspaceId) {
+      setActiveWorkspaceId(found.workspaceId);
+    }
+    setCurrentRoommateId(found.id);
+    setIsAuthenticated(true);
+
+    try {
+      localStorage.setItem('roomjustice_is_authenticated', 'true');
+      localStorage.setItem('roomjustice_current_roommate_id', found.id);
+      if (found.workspaceId) {
+        localStorage.setItem('roomjustice_active_ws_id', found.workspaceId);
+      }
+    } catch (e) {}
+
+    const ws = workspaces.find((w) => w.id === found.workspaceId) || DEFAULT_WORKSPACE;
+    showToast(`Welcome, ${found.name}! Entered ${ws.name}.`);
+  };
+
+  const logoutUser = () => {
+    setIsAuthenticated(false);
+    try {
+      localStorage.removeItem('roomjustice_is_authenticated');
+      localStorage.removeItem('roomjustice_current_roommate_id');
+      localStorage.removeItem('roomjustice_active_ws_id');
+    } catch (e) {}
+    showToast('Logged out of your profile. Please sign in to re-enter.');
+  };
 
   // Active workspace object
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
@@ -484,6 +553,289 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Onboard new user: register profile + choose workspace (Create or Join)
+  const registerAndOnboard = (
+    user: Partial<Roommate>,
+    workspaceChoice:
+      | { mode: 'CREATE'; ws: { name: string; location?: string; monthlyRentKES?: number; rentDueDay?: number } }
+      | { mode: 'JOIN'; inviteCode: string }
+  ): boolean => {
+    const timestamp = Date.now();
+
+    if (workspaceChoice.mode === 'CREATE') {
+      const code = `FLAT-${Math.floor(1000 + Math.random() * 9000)}`;
+      const newWs: Workspace = {
+        id: `ws_${timestamp}`,
+        name: workspaceChoice.ws.name || 'My Shared Flat',
+        inviteCode: code,
+        location: workspaceChoice.ws.location || 'Nairobi, Kenya',
+        monthlyRentKES: workspaceChoice.ws.monthlyRentKES || 32000,
+        rentDueDay: workspaceChoice.ws.rentDueDay || 5,
+        createdAt: new Date().toISOString(),
+      };
+
+      const newCoordinator: Roommate = {
+        id: `user_${timestamp}`,
+        workspaceId: newWs.id,
+        name: user.name || 'Flat Coordinator',
+        handle: `@${(user.name || 'coordinator').toLowerCase().replace(/\s+/g, '_')}`,
+        phone: user.phone || '0712345678',
+        avatar: user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name || 'lead')}`,
+        role: 'coordinator',
+        bio: user.bio || `Founder & Coordinator of ${newWs.name}`,
+        diet: user.diet && user.diet.length > 0 ? user.diet : ['all', 'greens_lover'],
+        examPeriod: !!user.examPeriod,
+        availabilityScore: user.examPeriod ? 0.2 : 1.0,
+        karmaScore: 120,
+        streakWeeks: 1,
+      };
+
+      const roommateTreasurer: Roommate = {
+        id: `roomie_${timestamp}_1`,
+        workspaceId: newWs.id,
+        name: 'Amani Kamau',
+        handle: '@amani_k',
+        phone: '0711223344',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
+        role: 'treasurer',
+        bio: 'Finance & Accounting finalist · Safaricom M-Pesa auditor',
+        diet: ['all', 'greens_lover'],
+        examPeriod: false,
+        availabilityScore: 1.0,
+        karmaScore: 135,
+        streakWeeks: 4,
+      };
+
+      const roommateFaith: Roommate = {
+        id: `roomie_${timestamp}_2`,
+        workspaceId: newWs.id,
+        name: 'Faith Chebet',
+        handle: '@faith_c',
+        phone: '0722334455',
+        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80',
+        role: 'member',
+        bio: 'Nursing student · Morning person · Vegetarian & Chapati chef',
+        diet: ['vegetarian'],
+        examPeriod: false,
+        availabilityScore: 0.9,
+        karmaScore: 110,
+        streakWeeks: 3,
+      };
+
+      const roommateIan: Roommate = {
+        id: `roomie_${timestamp}_3`,
+        workspaceId: newWs.id,
+        name: 'Ian Mutua',
+        handle: '@ian_m',
+        phone: '0733445566',
+        avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80',
+        role: 'member',
+        bio: 'Software Eng · Night owl gamer · Lactose intolerant',
+        diet: ['lactose_intolerant', 'greens_lover'],
+        examPeriod: false,
+        availabilityScore: 1.0,
+        karmaScore: 102,
+        streakWeeks: 5,
+      };
+
+      const allNewRoommates = [newCoordinator, roommateTreasurer, roommateFaith, roommateIan];
+      const memberIds = allNewRoommates.map((r) => r.id);
+
+      const starterExpenses: Expense[] = [
+        {
+          id: `exp_${timestamp}_1`,
+          workspaceId: newWs.id,
+          payerId: newCoordinator.id,
+          title: 'Safaricom 5G Home Wi-Fi Setup (50Mbps)',
+          category: 'HOUSE_BUFFER',
+          totalAmount: 3500,
+          date: 'Today, 10:30 AM',
+          mpesaCode: `SAF${Math.floor(100000 + Math.random() * 900000)}`,
+          verified: true,
+          items: [
+            {
+              id: `item_${timestamp}_1`,
+              name: 'Monthly Unlimited 5G Fibre Router',
+              cost: 3500,
+              category: 'utilities',
+              participantIds: memberIds,
+            },
+          ],
+        },
+        {
+          id: `exp_${timestamp}_2`,
+          workspaceId: newWs.id,
+          payerId: roommateTreasurer.id,
+          title: '13kg K-Gas Communal Cylinder Refill',
+          category: 'GAS',
+          totalAmount: 2900,
+          date: 'Yesterday, 3:15 PM',
+          mpesaCode: `GAS${Math.floor(100000 + Math.random() * 900000)}`,
+          verified: true,
+          items: [
+            {
+              id: `item_${timestamp}_2`,
+              name: 'TotalEnergies 13kg Gas Refill',
+              cost: 2900,
+              category: 'utilities',
+              participantIds: memberIds,
+            },
+          ],
+        },
+        {
+          id: `exp_${timestamp}_3`,
+          workspaceId: newWs.id,
+          payerId: roommateFaith.id,
+          title: 'Market Fresh Sukuma & Veggies Run',
+          category: 'GROCERIES',
+          totalAmount: 850,
+          date: 'Yesterday, 6:00 PM',
+          mpesaCode: `VEG${Math.floor(100000 + Math.random() * 900000)}`,
+          verified: true,
+          items: [
+            {
+              id: `item_${timestamp}_3`,
+              name: 'Sukuma Wiki & Terere',
+              cost: 200,
+              category: 'greens',
+              participantIds: memberIds,
+            },
+            {
+              id: `item_${timestamp}_4`,
+              name: 'Managu Fresh Bundle',
+              cost: 250,
+              category: 'greens',
+              participantIds: [newCoordinator.id, roommateTreasurer.id, roommateIan.id],
+            },
+            {
+              id: `item_${timestamp}_5`,
+              name: 'Irish Potatoes (Waru) & Onions',
+              cost: 400,
+              category: 'carbs',
+              participantIds: memberIds,
+            },
+          ],
+        },
+      ];
+
+      const starterChores: Chore[] = [
+        {
+          id: `chore_${timestamp}_1`,
+          workspaceId: newWs.id,
+          title: 'Kitchen Counter & Gas Cooker Sanitization',
+          description: 'Wipe burners, scrub grease traps, wash communal utensils',
+          difficulty: 3,
+          frequency: 'daily',
+          assignedToId: newCoordinator.id,
+          dueDate: new Date().toISOString().split('T')[0],
+          dueTime: '20:00',
+          status: 'PENDING',
+          bountyKES: 50,
+        },
+        {
+          id: `chore_${timestamp}_2`,
+          workspaceId: newWs.id,
+          title: 'Balcony & Estate Trash Dumpster Run',
+          description: 'Collect trash bags and drop at estate garbage collection point',
+          difficulty: 2,
+          frequency: 'daily',
+          assignedToId: roommateIan.id,
+          dueDate: new Date().toISOString().split('T')[0],
+          dueTime: '21:00',
+          status: 'PENDING',
+          bountyKES: 50,
+        },
+        {
+          id: `chore_${timestamp}_3`,
+          workspaceId: newWs.id,
+          title: 'Bathroom Scrubbing & Vim Disinfection',
+          description: 'Scrub tiles, sanitize toilet bowl, wipe mirror and taps',
+          difficulty: 4,
+          frequency: 'twice_weekly',
+          assignedToId: roommateFaith.id,
+          dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+          dueTime: '18:00',
+          status: 'PENDING',
+          bountyKES: 100,
+        },
+      ];
+
+      const starterBills: ParliamentBill[] = [
+        {
+          id: `bill_${timestamp}_1`,
+          workspaceId: newWs.id,
+          billNumber: 1,
+          proposerId: newCoordinator.id,
+          title: 'Ratify Flat Rules: Quiet Hours & Grocery Split Agreement',
+          description: 'Establishes 10:00 PM study hours on weekdays, vegetarian non-meat split immunity, and Ksh 50 bounty system.',
+          category: 'POLICY',
+          status: 'OPEN',
+          votes: [
+            { roommateId: newCoordinator.id, vote: 'PASS', reason: 'Founding flat charter', timestamp: 'Just now' },
+          ],
+          quorumNeeded: 3,
+          expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+        },
+      ];
+
+      setWorkspaces((prev) => [...prev, newWs]);
+      setAllRoommates((prev) => [...prev, ...allNewRoommates]);
+      setAllExpenses((prev) => [...starterExpenses, ...prev]);
+      setAllChores((prev) => [...starterChores, ...prev]);
+      setAllBills((prev) => [...starterBills, ...prev]);
+      setActiveWorkspaceId(newWs.id);
+      setCurrentRoommateId(newCoordinator.id);
+      setIsAuthenticated(true);
+
+      try {
+        localStorage.setItem('roomjustice_is_authenticated', 'true');
+        localStorage.setItem('roomjustice_current_roommate_id', newCoordinator.id);
+        localStorage.setItem('roomjustice_active_ws_id', newWs.id);
+      } catch (e) {}
+
+      showToast(`Created full environment for "${newWs.name}"! Welcome, ${newCoordinator.name}.`);
+      return true;
+    } else {
+      const cleanCode = workspaceChoice.inviteCode.trim().toUpperCase();
+      const foundWs = workspaces.find((w) => w.inviteCode.toUpperCase() === cleanCode);
+
+      if (!foundWs) {
+        showToast(`Invalid invite code "${cleanCode}". Please verify with flat coordinator.`);
+        return false;
+      }
+
+      const newMember: Roommate = {
+        id: `user_${timestamp}`,
+        workspaceId: foundWs.id,
+        name: user.name || 'Flatmate',
+        handle: `@${(user.name || 'flatmate').toLowerCase().replace(/\s+/g, '_')}`,
+        phone: user.phone || '0712345678',
+        avatar: user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name || 'member')}`,
+        role: 'member',
+        bio: user.bio || `Roommate at ${foundWs.name}`,
+        diet: user.diet && user.diet.length > 0 ? user.diet : ['all', 'greens_lover'],
+        examPeriod: !!user.examPeriod,
+        availabilityScore: user.examPeriod ? 0.2 : 1.0,
+        karmaScore: 100,
+        streakWeeks: 0,
+      };
+
+      setAllRoommates((prev) => [...prev, newMember]);
+      setActiveWorkspaceId(foundWs.id);
+      setCurrentRoommateId(newMember.id);
+      setIsAuthenticated(true);
+
+      try {
+        localStorage.setItem('roomjustice_is_authenticated', 'true');
+        localStorage.setItem('roomjustice_current_roommate_id', newMember.id);
+        localStorage.setItem('roomjustice_active_ws_id', foundWs.id);
+      } catch (e) {}
+
+      showToast(`Joined ${foundWs.name}! Welcome, ${newMember.name}.`);
+      return true;
+    }
+  };
+
   // Invite Roommate to active workspace
   const handleInviteRoommate = (newMember: Roommate) => {
     const memberWithWs: Roommate = {
@@ -611,6 +963,12 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
         handleArbitrationVerdict,
         handleCreateBill,
         fund,
+        isAuthenticated,
+        isHydrated,
+        allRoommates,
+        loginUser,
+        logoutUser,
+        registerAndOnboard,
         isMpesaModalOpen,
         setIsMpesaModalOpen,
         isWorkspaceModalOpen,
