@@ -160,7 +160,7 @@ export function AIChatDrawer() {
                     </h3>
                   </div>
                   <p className="text-[11px] text-slate-500">
-                    Speaker of {activeWorkspace.name} · Powered by Groq Llama-3.1
+                    Speaker of {activeWorkspace.name} · Powered by Groq AI
                   </p>
                 </div>
               </div>

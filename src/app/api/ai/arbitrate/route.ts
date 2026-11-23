@@ -48,33 +48,40 @@ Description: ${body.billDescription}
 Roommate Votes & Reasons:
 ${body.votes.map((v) => `- ${v.roommateName} voted ${v.vote}: "${v.reason || 'No reason provided'}"`).join('\n')}`;
 
-    // 1. Try Groq (Llama-3.1-8B-instant)
+    // 1. Try Groq (Active Models: openai/gpt-oss-20b, qwen/qwen3.8-27b)
     if (groqKey) {
-      try {
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${groqKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'llama-3.1-8b-instant',
-            messages: [
-              { role: 'system', content: SYSTEM_PROMPT },
-              { role: 'user', content: userContent },
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.2,
-          }),
-        });
+      const groqModels = ['openai/gpt-oss-20b', 'qwen/qwen3.8-27b'];
 
-        if (groqRes.ok) {
-          const data = await groqRes.json();
-          const parsed = JSON.parse(data.choices[0].message.content);
-          return NextResponse.json({ ...parsed, provider: 'Groq Llama-3.1' });
+      for (const modelName of groqModels) {
+        try {
+          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${groqKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: modelName,
+              messages: [
+                { role: 'system', content: SYSTEM_PROMPT },
+                { role: 'user', content: userContent },
+              ],
+              response_format: { type: 'json_object' },
+              temperature: 0.2,
+            }),
+          });
+
+          if (groqRes.ok) {
+            const data = await groqRes.json();
+            const rawContent = data.choices[0]?.message?.content;
+            if (rawContent) {
+              const parsed = JSON.parse(rawContent);
+              return NextResponse.json({ ...parsed, provider: 'Groq AI' });
+            }
+          }
+        } catch (err) {
+          console.warn(`Groq arbitration model ${modelName} failed:`, err);
         }
-      } catch (err) {
-        console.warn('Groq arbitration failed, trying NVIDIA NIM fallback...', err);
       }
     }
 

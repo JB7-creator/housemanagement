@@ -31,37 +31,41 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. Fallback to Groq Llama-3.1-8B-instant (~180ms)
+    // 2. Fallback to Groq AI (~180ms)
     const groqKey = process.env.GROQ_API_KEY;
     if (groqKey) {
-      try {
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${groqKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'llama-3.1-8b-instant',
-            messages: [
-              { role: 'system', content: EXTRACTION_SYSTEM_PROMPT },
-              { role: 'user', content: `Parse this Kenyan M-Pesa SMS:\n${rawSms}` },
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.0,
-          }),
-        });
+      const groqModels = ['openai/gpt-oss-20b', 'qwen/qwen3.8-27b'];
 
-        if (groqRes.ok) {
-          const data = await groqRes.json();
-          const parsed = JSON.parse(data.choices[0].message.content);
-          return NextResponse.json({
-            ...parsed,
-            source: 'Groq Llama-3.1 AI',
+      for (const modelName of groqModels) {
+        try {
+          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${groqKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: modelName,
+              messages: [
+                { role: 'system', content: EXTRACTION_SYSTEM_PROMPT },
+                { role: 'user', content: `Parse this Kenyan M-Pesa SMS:\n${rawSms}` },
+              ],
+              response_format: { type: 'json_object' },
+              temperature: 0.0,
+            }),
           });
+
+          if (groqRes.ok) {
+            const data = await groqRes.json();
+            const parsed = JSON.parse(data.choices[0]?.message?.content);
+            return NextResponse.json({
+              ...parsed,
+              source: `Groq AI (${modelName})`,
+            });
+          }
+        } catch (err) {
+          console.warn(`Groq M-Pesa extraction failed on ${modelName}:`, err);
         }
-      } catch (err) {
-        console.warn('Groq M-Pesa extraction failed:', err);
       }
     }
 

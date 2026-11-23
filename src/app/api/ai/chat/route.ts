@@ -41,30 +41,40 @@ Active Bounties: ${context.bountiesSummary || '1 active bounty: Trash run (KES 5
       ...messages,
     ];
 
-    // 1. Try Groq Llama-3.1-8B-instant
+    // 1. Try Groq with active fast reasoning models
     if (groqKey) {
-      try {
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${groqKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'llama-3.1-8b-instant',
-            messages: fullMessages,
-            temperature: 0.3,
-            max_tokens: 600,
-          }),
-        });
+      const groqModels = ['openai/gpt-oss-20b', 'qwen/qwen3.8-27b'];
 
-        if (groqRes.ok) {
-          const data = await groqRes.json();
-          const reply = data.choices[0].message.content;
-          return NextResponse.json({ reply, provider: 'Groq Llama-3.1' });
+      for (const modelName of groqModels) {
+        try {
+          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${groqKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: modelName,
+              messages: fullMessages,
+              temperature: 0.3,
+              max_tokens: 600,
+            }),
+          });
+
+          if (groqRes.ok) {
+            const data = await groqRes.json();
+            const reply = data.choices[0]?.message?.content;
+            if (reply) {
+              const displayProvider = modelName === 'openai/gpt-oss-20b' ? 'Groq GPT-OSS' : 'Groq Qwen-27B';
+              return NextResponse.json({ reply, provider: displayProvider });
+            }
+          } else {
+            const errBody = await groqRes.text();
+            console.warn(`Groq model ${modelName} returned status ${groqRes.status}:`, errBody);
+          }
+        } catch (err) {
+          console.warn(`Groq model ${modelName} failed, trying next...`, err);
         }
-      } catch (err) {
-        console.warn('Groq chat failed, falling back to NVIDIA NIM...', err);
       }
     }
 
