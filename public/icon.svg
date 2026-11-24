@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" fill="none">
+  <defs>
+    <!-- Electric Cobalt Gradient -->
+    <linearGradient id="electricGrad" x1="16" y1="16" x2="112" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0066FF" />
+      <stop offset="50%" stop-color="#0052FF" />
+      <stop offset="100%" stop-color="#0037B3" />
+    </linearGradient>
+
+    <!-- Champagne Gold Gradient -->
+    <linearGradient id="champagneGrad" x1="32" y1="20" x2="96" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FCEBA4" />
+      <stop offset="40%" stop-color="#E5C158" />
+      <stop offset="100%" stop-color="#B88E1F" />
+    </linearGradient>
+
+    <!-- Emerald Accent Gradient -->
+    <linearGradient id="emeraldGrad" x1="50" y1="60" x2="78" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <!-- Deep Slate Shadow Filter -->
+    <filter id="shadowFilter" x="-10%" y="-10%" width="130%" height="130%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#003399" flood-opacity="0.35" />
+    </filter>
+
+    <!-- Sparkle Glow Filter -->
+    <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Outer Rounded Container with subtle border -->
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#electricGrad)" filter="url(#shadowFilter)" />
+  <rect x="8.5" y="8.5" width="111" height="111" rx="27.5" stroke="#4D8BFF" stroke-width="1.5" stroke-opacity="0.5" />
+
+  <!-- Architectural Modern Roofline + Shield Geometry -->
+  <!-- Top Roof Gable Apex -->
+  <path 
+    d="M64 26 L98 50 L98 72 C98 88 82 101 64 106 C46 101 30 88 30 72 L30 50 Z" 
+    fill="#081432" 
+    opacity="0.25"
+  />
+
+  <!-- Main Shield Contour (Justice & Trust) -->
+  <path 
+    d="M64 29 L94 51 L94 70 C94 84 80 96 64 101 C48 96 34 84 34 70 L34 51 Z" 
+    stroke="url(#champagneGrad)" 
+    stroke-width="3" 
+    stroke-linecap="round" 
+    stroke-linejoin="round"
+  />
+
+  <!-- Architectural House Silhouette & Pillar Division -->
+  <path 
+    d="M48 64 L64 52 L80 64 V84 H48 Z" 
+    fill="#FFFFFF" 
+    fill-opacity="0.08" 
+    stroke="#FFFFFF" 
+    stroke-width="1.5" 
+    stroke-opacity="0.3" 
+    stroke-linejoin="round"
+  />
+
+  <!-- Balance Beam of Justice (Horizontal Equitability) -->
+  <line x1="42" y1="56" x2="86" y2="56" stroke="url(#champagneGrad)" stroke-width="2.5" stroke-linecap="round" />
+  
+  <!-- Scales of Fairness -->
+  <circle cx="44" cy="62" r="3" fill="url(#champagneGrad)" />
+  <circle cx="84" cy="62" r="3" fill="url(#champagneGrad)" />
+
+  <!-- Algorithmic AI Spark & Diamond Core -->
+  <!-- Central Diamond Hub -->
+  <polygon points="64,62 72,70 64,78 56,70" fill="url(#champagneGrad)" />
+  <!-- Core Emerald Center -->
+  <circle cx="64" cy="70" r="3" fill="url(#emeraldGrad)" />
+
+  <!-- Dynamic Star Sparks (AI Intelligence) -->
+  <path d="M64 42 L65.5 46.5 L70 48 L65.5 49.5 L64 54 L62.5 49.5 L58 48 L62.5 46.5 Z" fill="#FCEBA4" filter="url(#glowFilter)" />
+  <circle cx="88" cy="38" r="1.5" fill="#E5C158" />
+  <circle cx="40" cy="40" r="1.5" fill="#E5C158" />
+</svg>

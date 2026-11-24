@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { ShieldCheck, Sparkles, Plus, Building2, UserPlus, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Plus, Building2, UserPlus, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { Roommate, Workspace } from '../lib/types';
+import { RoomJusticeLogo } from './RoomJusticeLogo';
 
 interface NavbarProps {
   currentRoommate: Roommate;
@@ -34,17 +35,8 @@ export function Navbar({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo & Workspace Dropdown */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-electric-500 flex items-center justify-center text-white shadow-electric-glow">
-            <ShieldCheck className="w-6 h-6 stroke-[2.2]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-display font-bold text-lg text-slate-900 tracking-tight">HouseManagement</span>
-              <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-champagne-100 border border-champagne-300 text-[10px] font-semibold text-champagne-800">
-                <Sparkles className="w-3 h-3 text-champagne-600" />
-                RoomJustice AI
-              </span>
-            </div>
+          <RoomJusticeLogo size="md" href="/" />
+          <div className="hidden sm:block border-l border-slate-200 pl-3">
             {/* Active Workspace Selector */}
             <div className="flex items-center gap-1.5 mt-0.5">
               <select

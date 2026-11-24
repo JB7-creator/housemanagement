@@ -6,6 +6,7 @@ import { X, Lock, Mail, User, ShieldCheck, Sparkles, ArrowRight, Phone, Loader2,
 import { useHouse } from '../context/HouseContext';
 import { Roommate } from '../lib/types';
 import { KenyanPhoneInput } from './KenyanPhoneInput';
+import { RoomJusticeLogo } from './RoomJusticeLogo';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -113,17 +114,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-electric-50 text-electric-600 flex items-center justify-center">
-              <Lock className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-display font-bold text-base text-slate-900">
-                Secure Account Access
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                Current active flat: {activeWorkspace.name}
-              </p>
-            </div>
+            <RoomJusticeLogo size="sm" />
           </div>
           <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
             <X className="w-5 h-5" />

@@ -28,6 +28,7 @@ import { useHouse } from '../context/HouseContext';
 import { KenyanPhoneInput } from './KenyanPhoneInput';
 import { DietaryPreference, Roommate } from '../lib/types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { RoomJusticeLogo } from './RoomJusticeLogo';
 
 export function WelcomeAuthGate() {
   const {
@@ -333,14 +334,18 @@ export function WelcomeAuthGate() {
         
         {/* Brand Header */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/80 shadow-inner text-xs font-semibold text-slate-300">
+          <div className="flex justify-center mb-1">
+            <RoomJusticeLogo size="lg" theme="dark" variant="stacked" showSubtext showBadge />
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/80 shadow-inner text-xs font-semibold text-slate-300">
             <span className="text-sm">🇰🇪</span>
             <span>RoomJustice Kenya</span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-champagne-400 font-mono text-[11px]">Secure Flat & Co-Living OS</span>
+            <span className="text-champagne-400 font-mono text-[10px]">Secure Flat OS</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-display text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-display text-white">
             {pendingOAuthUser ? 'Complete Your Flat Setup' : 'Secure Flat Access'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">

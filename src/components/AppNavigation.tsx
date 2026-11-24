@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  ShieldCheck,
   Sparkles,
   Plus,
   Building2,
@@ -29,6 +28,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useHouse } from '../context/HouseContext';
+import { RoomJusticeLogo } from './RoomJusticeLogo';
 
 const NAV_LINKS = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -87,21 +87,7 @@ export function AppNavigation() {
         
         {/* Left: Brand & Workspace Switcher Pill */}
         <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-electric-500 flex items-center justify-center text-white shadow-electric-glow group-hover:scale-105 transition-transform">
-              <ShieldCheck className="w-5 h-5 stroke-[2.3]" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-display font-bold text-base text-slate-900 tracking-tight">
-                  RoomJustice
-                </span>
-                <span className="hidden xl:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-champagne-100 border border-champagne-300 text-[9px] font-bold text-champagne-800">
-                  AI
-                </span>
-              </div>
-            </div>
-          </Link>
+          <RoomJusticeLogo size="md" href="/" />
 
           {/* Clean Workspace Selector Dropdown */}
           <div className="relative" ref={workspaceRef}>

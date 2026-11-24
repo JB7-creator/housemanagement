@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   title: 'HouseManagement — Co-living Without The Drama | RoomJustice AI',
   description: 'The algorithmic fairness operating system for roommates and university shared housing. M-Pesa parsing, dietary splits, envy-free chores, and AI arbitration.',
   keywords: ['roommates', 'cost sharing', 'm-pesa split', 'kenya roommates', 'fair chore rotation', 'student housing'],
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.png',
+  },
 };
 
 export default function RootLayout({
@@ -17,6 +22,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <link rel="alternate icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
