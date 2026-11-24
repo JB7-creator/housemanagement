@@ -3,7 +3,7 @@
 import React from 'react';
 import { RoommateProfiles } from '../../components/RoommateProfiles';
 import { useHouse } from '../../context/HouseContext';
-import { Building2, UserPlus, Copy, Check, MapPin, Calendar, DollarSign } from 'lucide-react';
+import { Building2, UserPlus, Copy, Check, MapPin, Calendar, DollarSign, MessageCircle, Share2 } from 'lucide-react';
 import { formatKES } from '../../lib/utils';
 
 export default function MembersPage() {
@@ -17,11 +17,20 @@ export default function MembersPage() {
 
   const [copiedCode, setCopiedCode] = React.useState(false);
 
-  const copyCode = () => {
-    navigator.clipboard.writeText(activeWorkspace.inviteCode);
+  const copyInviteLink = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    const link = `${origin}/?invite=${activeWorkspace.inviteCode}`;
+    navigator.clipboard.writeText(link);
     setCopiedCode(true);
-    showToast(`Copied invite code: ${activeWorkspace.inviteCode}`);
+    showToast(`Copied flat invite link: ${link}`);
     setTimeout(() => setCopiedCode(false), 2500);
+  };
+
+  const shareViaWhatsApp = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    const link = `${origin}/?invite=${activeWorkspace.inviteCode}`;
+    const text = `Habari! Join our flat workspace *${activeWorkspace.name}* on RoomJustice to manage expenses and chores: ${link} (Code: *${activeWorkspace.inviteCode}*)`;
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   return (
@@ -67,10 +76,18 @@ export default function MembersPage() {
               </span>
             </div>
             <button
-              onClick={copyCode}
+              onClick={copyInviteLink}
+              title="Copy Full Invite Link"
               className="p-1.5 rounded-lg bg-white border border-champagne-300 hover:bg-champagne-100 text-slate-700 transition-all"
             >
               {copiedCode ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={shareViaWhatsApp}
+              title="Share via WhatsApp"
+              className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs"
+            >
+              <MessageCircle className="w-4 h-4 fill-white text-emerald-600" />
             </button>
           </div>
 
@@ -82,7 +99,7 @@ export default function MembersPage() {
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-electric-500 hover:bg-electric-600 text-white text-xs font-bold shadow-sm transition-all"
           >
             <UserPlus className="w-4 h-4 stroke-[2.5]" />
-            <span>Invite Flatmate</span>
+            <span>Invite & Add Members</span>
           </button>
         </div>
       </div>

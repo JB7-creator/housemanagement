@@ -73,6 +73,34 @@ export function WelcomeAuthGate() {
   const [newFlatRentDay, setNewFlatRentDay] = useState('5');
   const [joinInviteCode, setJoinInviteCode] = useState('');
 
+  // Auto-detect invite code from URL query params (e.g. ?invite=ROYS-402 or ?code=FLAT-1234)
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('invite') || params.get('code') || params.get('flat');
+      if (code) {
+        const clean = code.trim().toUpperCase();
+        setJoinInviteCode(clean);
+        setFlatChoice('JOIN');
+        try {
+          localStorage.setItem('roomjustice_pending_invite_code', clean);
+        } catch (e) {}
+      } else {
+        try {
+          const stored = localStorage.getItem('roomjustice_pending_invite_code');
+          if (stored) {
+            setJoinInviteCode(stored.trim().toUpperCase());
+            setFlatChoice('JOIN');
+          }
+        } catch (e) {}
+      }
+    }
+  }, []);
+
+  const invitedWorkspace = workspaces.find(
+    (w) => w.inviteCode.toUpperCase() === joinInviteCode.trim().toUpperCase()
+  );
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Local file photo upload
@@ -321,6 +349,36 @@ export function WelcomeAuthGate() {
               : 'Authenticate with your Google account, provider, or verified email credentials to enter your scoped flat workspace.'}
           </p>
         </div>
+
+        {/* Flat Invitation Banner */}
+        {joinInviteCode && (
+          <div className="p-4 rounded-2xl bg-electric-500/10 border border-electric-500/40 text-white flex items-center justify-between gap-3 shadow-lg animate-in slide-in-from-top-2">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-electric-500 text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold text-champagne-400 uppercase tracking-wider block">
+                  Flat Invitation Detected
+                </span>
+                <h4 className="text-sm font-bold text-white truncate">
+                  You are invited to join{' '}
+                  <span className="text-electric-400">
+                    {invitedWorkspace ? invitedWorkspace.name : joinInviteCode}
+                  </span>
+                </h4>
+                <p className="text-[11px] text-slate-300">
+                  {invitedWorkspace ? `${invitedWorkspace.location} · ` : ''}Authenticate below to claim your flatmate profile.
+                </p>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="font-mono text-xs font-bold text-champagne-300 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-700 block">
+                {joinInviteCode}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* CASE 1: PENDING OAUTH USER WORKSPACE ONBOARDING */}
         {pendingOAuthUser ? (

@@ -332,8 +332,30 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
     const found = allRoommates.find((r) => r.id === roommateId);
     if (!found) return;
 
-    if (found.workspaceId) {
-      setActiveWorkspaceId(found.workspaceId);
+    let targetWsId = found.workspaceId;
+
+    // Check if there was a pending invite code that this user clicked!
+    try {
+      const pendingCode = localStorage.getItem('roomjustice_pending_invite_code');
+      if (pendingCode) {
+        const invitedWs = workspaces.find(
+          (w) => w.inviteCode.toUpperCase() === pendingCode.trim().toUpperCase()
+        );
+        if (invitedWs) {
+          targetWsId = invitedWs.id;
+          // Associate this roommate with the invited workspace if needed
+          if (found.workspaceId !== invitedWs.id) {
+            setAllRoommates((prev) =>
+              prev.map((r) => (r.id === found.id ? { ...r, workspaceId: invitedWs.id } : r))
+            );
+          }
+        }
+        localStorage.removeItem('roomjustice_pending_invite_code');
+      }
+    } catch (e) {}
+
+    if (targetWsId) {
+      setActiveWorkspaceId(targetWsId);
     }
     setCurrentRoommateId(found.id);
     setIsAuthenticated(true);
@@ -341,12 +363,12 @@ export function HouseProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem('roomjustice_is_authenticated', 'true');
       localStorage.setItem('roomjustice_current_roommate_id', found.id);
-      if (found.workspaceId) {
-        localStorage.setItem('roomjustice_active_ws_id', found.workspaceId);
+      if (targetWsId) {
+        localStorage.setItem('roomjustice_active_ws_id', targetWsId);
       }
     } catch (e) {}
 
-    const ws = workspaces.find((w) => w.id === found.workspaceId) || DEFAULT_WORKSPACE;
+    const ws = workspaces.find((w) => w.id === targetWsId) || DEFAULT_WORKSPACE;
     showToast(`Welcome, ${found.name}! Entered ${ws.name}.`);
   };
 
