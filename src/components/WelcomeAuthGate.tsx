@@ -160,14 +160,6 @@ export function WelcomeAuthGate() {
     }
   };
 
-  // Auto-fill demo credentials for testers/evaluators
-  const fillDemoCredentials = () => {
-    setLoginEmail('demo@roomjustice.ke');
-    setLoginPassword('DemoPassword2025!');
-    setAuthError(null);
-    showToast('Demo credentials filled: demo@roomjustice.ke');
-  };
-
   // Handle Sign Up & Onboarding Submit
   const handleSignUpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -618,21 +610,6 @@ export function WelcomeAuthGate() {
                       )}
                     </button>
                   </form>
-
-                  {/* Testing Credentials Quick-Fill helper */}
-                  <div className="mt-4 p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 flex items-center justify-between gap-3">
-                    <div className="text-[11px] text-slate-400">
-                      <span className="font-semibold text-slate-300 block">Testing credentials:</span>
-                      <code className="text-champagne-400 text-[10px]">demo@roomjustice.ke</code>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={fillDemoCredentials}
-                      className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold transition-colors"
-                    >
-                      Fill Demo
-                    </button>
-                  </div>
                 </div>
               ) : (
                 /* TAB 2: SIGN UP & CHOOSE ENVIRONMENT */

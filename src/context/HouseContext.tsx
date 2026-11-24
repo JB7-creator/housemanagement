@@ -28,35 +28,9 @@ const DEFAULT_WORKSPACE: Workspace = {
   createdAt: '2026-11-01',
 };
 
-export const DEFAULT_CREDENTIALS: Record<string, { email: string; password: string; roommateId: string }> = {
-  'demo@roomjustice.ke': {
-    email: 'demo@roomjustice.ke',
-    password: 'DemoPassword2025!',
-    roommateId: 'roomie_1',
-  },
-  'brian@roomjustice.ke': {
-    email: 'brian@roomjustice.ke',
-    password: 'Roomie2025!',
-    roommateId: 'roomie_1',
-  },
-  'kevin@roomjustice.ke': {
-    email: 'kevin@roomjustice.ke',
-    password: 'Roomie2025!',
-    roommateId: 'roomie_2',
-  },
-  'dennis@roomjustice.ke': {
-    email: 'dennis@roomjustice.ke',
-    password: 'Roomie2025!',
-    roommateId: 'roomie_3',
-  },
-  'maya@roomjustice.ke': {
-    email: 'maya@roomjustice.ke',
-    password: 'Roomie2025!',
-    roommateId: 'roomie_4',
-  },
-};
+export const DEFAULT_CREDENTIALS: Record<string, { email: string; password: string; roommateId: string }> = {};
 
-// Tag initial seed data with the default workspace ID and demo emails
+// Tag initial seed data with the default workspace ID
 const SEED_EMAILS = [
   'brian@roomjustice.ke',
   'kevin@roomjustice.ke',
